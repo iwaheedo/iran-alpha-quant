@@ -1,13 +1,22 @@
 'use client';
 
 import useSWR from 'swr';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction } from '@/types';
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
+// Auto-refresh intervals (in ms)
+// Free tier math (24h page open worst case):
+//   Gemini: 2 calls/run × 288 runs = 576/day (limit: 1,500/day) ✓
+//   Finnhub: 12 symbols/run = 2.4 calls/min (limit: 60/min) ✓
+const ANALYSIS_INTERVAL = 5 * 60 * 1000;  // 5 minutes — full AI re-analysis
+const PRICES_INTERVAL = 2 * 60 * 1000;    // 2 minutes — price ticker refresh
+
 export function useAnalysisData() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const hasAutoRun = useRef(false);
+  const analysisTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { data: tradesData, mutate: mutateTrades } = useSWR<{ trades: TradeIdea[] }>(
     '/api/trades',
@@ -21,10 +30,11 @@ export function useAnalysisData() {
     { refreshInterval: 0, revalidateOnFocus: false }
   );
 
+  // Prices refresh every 2 min via live Finnhub fetch
   const { data: pricesData, mutate: mutatePrices } = useSWR<{ prices: TickerPrice[] }>(
-    '/api/prices',
+    '/api/fetch-prices',
     fetcher,
-    { refreshInterval: 60000, revalidateOnFocus: false }
+    { refreshInterval: PRICES_INTERVAL, revalidateOnFocus: false }
   );
 
   const { data: regimeData, mutate: mutateRegime } = useSWR<{ regime: MacroRegime }>(
@@ -39,7 +49,7 @@ export function useAnalysisData() {
     { refreshInterval: 0, revalidateOnFocus: false }
   );
 
-  const runAnalysis = async () => {
+  const runAnalysis = useCallback(async () => {
     if (isAnalyzing) return;
     setIsAnalyzing(true);
 
@@ -73,7 +83,28 @@ export function useAnalysisData() {
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [isAnalyzing, mutateTrades, mutateNews, mutatePrices, mutateRegime, mutatePolymarket]);
+
+  // Auto-run analysis on first page load + every 30 minutes
+  useEffect(() => {
+    if (!hasAutoRun.current) {
+      hasAutoRun.current = true;
+      // Small delay so the UI renders first, then analysis starts
+      const timeout = setTimeout(() => {
+        runAnalysis();
+      }, 500);
+
+      // Set up recurring analysis every 30 minutes
+      analysisTimer.current = setInterval(() => {
+        runAnalysis();
+      }, ANALYSIS_INTERVAL);
+
+      return () => {
+        clearTimeout(timeout);
+        if (analysisTimer.current) clearInterval(analysisTimer.current);
+      };
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const analyzeNews = async (newsId: string) => {
     const response = await fetch('/api/analyze-news', {
@@ -82,16 +113,6 @@ export function useAnalysisData() {
       body: JSON.stringify({ newsId }),
     });
     return response.json();
-  };
-
-  const fetchNews = async () => {
-    await fetch('/api/fetch-news', { method: 'POST' });
-    await mutateNews();
-  };
-
-  const fetchPrices = async () => {
-    await fetch('/api/fetch-prices', { method: 'POST' });
-    await mutatePrices();
   };
 
   return {
@@ -103,7 +124,5 @@ export function useAnalysisData() {
     isAnalyzing,
     runAnalysis,
     analyzeNews,
-    fetchNews,
-    fetchPrices,
   };
 }
