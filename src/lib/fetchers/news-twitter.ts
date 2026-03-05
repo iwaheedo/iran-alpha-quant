@@ -23,6 +23,7 @@ function detectPriority(title: string, handle: string): NewsItem['priority'] {
   const highPriorityAccounts = [
     'realDonaldTrump', 'SecDef', 'StateDept', 'IsraPMO',
     'IranIntl', 'IsraelMFA', 'FirstSquawk', 'DeItaone', 'Fxhedgers', 'zaborheadlines',
+    'insiderwave_',
   ];
 
   const breakingKeywords = ['breaking', 'just in', 'urgent', 'flash', '🚨', '⚡'];

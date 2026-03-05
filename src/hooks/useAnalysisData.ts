@@ -11,16 +11,17 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-// Polling intervals — all hit CDN cache (instant), not serverless functions
-const NEWS_POLL = 60 * 1000;          // Poll news every 60s (CDN-cached for 60s)
-const PRICES_POLL = 60 * 1000;        // Poll prices every 60s (CDN-cached for 60s)
-const ANALYSIS_POLL = 10 * 60 * 1000; // Poll analysis every 10min (CDN-cached for 2h)
+// Client polling intervals — reads from DB (populated by server-side cron jobs)
+const NEWS_POLL = 60 * 1000;          // Poll DB for latest news every 60s
+const PRICES_POLL = 60 * 1000;        // Poll DB for latest prices every 60s
+const ANALYSIS_POLL = 10 * 60 * 1000; // Poll DB for latest trades every 10min
 
 // Architecture:
-//   /api/latest      → full AI analysis, CDN-cached 2h (keeps Groq under 100K TPD free tier)
-//   /api/fetch-news  → RSS news, CDN-cached 60s
-//   /api/fetch-prices→ Finnhub prices, CDN-cached 60s
-//   1000 users = 1 serverless invocation per cache cycle, rest hit CDN
+//   Server-side cron jobs (vercel.json) populate the DB independently:
+//     /api/cron/analyze  → AI trade ideas every 10 min
+//     /api/cron/news     → news feed every 1 min
+//     /api/cron/prices   → price data every 1 min
+//   Client polls read-only endpoints to display latest data from DB.
 
 interface LatestResponse {
   trades: TradeIdea[];
@@ -35,7 +36,7 @@ export function useAnalysisData() {
   const [newsCountdown, setNewsCountdown] = useState(60);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Primary: CDN-cached analysis (trades, predictions, regime)
+  // Primary: reads latest data from DB (populated by server-side cron)
   const { data: latestData, isLoading: isAnalysisLoading, error: analysisError } = useSWR<LatestResponse>(
     '/api/latest',
     fetcher,
@@ -47,16 +48,16 @@ export function useAnalysisData() {
     }
   );
 
-  // Live news feed — CDN-cached 60s, polled every 60s
+  // News from DB (cron populates every 1 min)
   const { data: newsData } = useSWR<{ news: NewsItem[] }>(
-    '/api/fetch-news',
+    '/api/news',
     fetcher,
     { refreshInterval: NEWS_POLL, revalidateOnFocus: false }
   );
 
-  // Live prices — CDN-cached 60s, polled every 60s
+  // Prices from DB (cron populates every 1 min)
   const { data: pricesData } = useSWR<{ prices: TickerPrice[] }>(
-    '/api/fetch-prices',
+    '/api/prices',
     fetcher,
     { refreshInterval: PRICES_POLL, revalidateOnFocus: false }
   );

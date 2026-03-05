@@ -80,7 +80,8 @@ export const TWITTER_ACCOUNTS = [
   'IntelCrab',
   'ByzGeneral',
   'GRDecter',
-  // Traders
+  // Traders / trade ideas
+  'insiderwave_',
   'WallStJesus',
   'DarioCpx',
   'MarketRebels',

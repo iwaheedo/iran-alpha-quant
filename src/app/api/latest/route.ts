@@ -1,62 +1,47 @@
-import { runFullAnalysis } from '@/lib/ai/analyzer';
+import {
+  getLatestTrades,
+  getLatestNews,
+  getLatestPrices,
+  getLatestPredictions,
+  getLatestRegime,
+} from '@/lib/db';
 
-export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-// CDN-cached: fresh for 5 min, serves stale while revalidating for 1 min after.
-// 1000 users hitting this = 1 serverless invocation, 999 CDN cache hits.
+// Read-only endpoint — serves latest data from DB.
+// Data is populated by server-side cron jobs:
+//   /api/cron/analyze  — every 10 min (AI trade ideas)
+//   /api/cron/news     — every 1 min
+//   /api/cron/prices   — every 1 min
 export async function GET() {
   try {
-    console.log('[API /latest] Running analysis (CDN cache miss)...');
-    const result = await runFullAnalysis();
+    const trades = getLatestTrades();
+    const news = getLatestNews(50);
+    const prices = getLatestPrices();
+    const predictions = getLatestPredictions();
+    const regime = getLatestRegime();
 
-    return new Response(
-      JSON.stringify({
-        trades: result.trades,
-        news: result.news,
-        prices: result.prices,
-        predictions: result.predictions,
-        regime: result.regime,
-        runId: result.runId,
-        generatedAt: new Date().toISOString(),
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          // Vercel-specific CDN header — not overridden by Next.js
-          // Cache for 2 hours (7200s), serve stale for 10 min while revalidating.
-          // This keeps Groq usage under 100K TPD free tier (12 calls/day × 8K tokens).
-          'Vercel-CDN-Cache-Control': 'max-age=7200, stale-while-revalidate=600',
-          'CDN-Cache-Control': 'max-age=7200, stale-while-revalidate=600',
-          'Cache-Control': 'public, max-age=0, must-revalidate',
-        },
-      }
-    );
+    return Response.json({
+      trades,
+      news,
+      prices,
+      predictions,
+      regime,
+      generatedAt: new Date().toISOString(),
+    });
   } catch (err) {
     console.error('[API /latest] Error:', err);
-
-    // Return 200 with empty trades — keeps CDN from caching a hard error.
-    // Short TTL (30s) so the next request retries quickly.
-    return new Response(
-      JSON.stringify({
+    return Response.json(
+      {
         trades: [],
         news: [],
         prices: [],
         predictions: [],
         regime: null,
-        error: err instanceof Error ? err.message : 'Analysis failed',
+        error: err instanceof Error ? err.message : 'Failed to load data',
         generatedAt: new Date().toISOString(),
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Vercel-CDN-Cache-Control': 'max-age=30, stale-while-revalidate=10',
-          'CDN-Cache-Control': 'max-age=30, stale-while-revalidate=10',
-          'Cache-Control': 'public, max-age=0, must-revalidate',
-        },
-      }
+      },
+      { status: 200 }
     );
   }
 }
