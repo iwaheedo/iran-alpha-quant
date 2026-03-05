@@ -71,7 +71,7 @@ IMPORTANT:
 - Link trades to specific news items via newsIds.`;
 
 export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): string {
-  const newsJson = news.slice(0, 30).map(n => ({
+  const newsJson = news.slice(0, 15).map(n => ({
     id: n.id,
     title: n.title,
     source: n.source,

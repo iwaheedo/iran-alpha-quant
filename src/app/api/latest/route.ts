@@ -25,8 +25,10 @@ export async function GET() {
         headers: {
           'Content-Type': 'application/json',
           // Vercel-specific CDN header — not overridden by Next.js
-          'Vercel-CDN-Cache-Control': 'max-age=300, stale-while-revalidate=60',
-          'CDN-Cache-Control': 'max-age=300, stale-while-revalidate=60',
+          // Cache for 2 hours (7200s), serve stale for 10 min while revalidating.
+          // This keeps Groq usage under 100K TPD free tier (12 calls/day × 8K tokens).
+          'Vercel-CDN-Cache-Control': 'max-age=7200, stale-while-revalidate=600',
+          'CDN-Cache-Control': 'max-age=7200, stale-while-revalidate=600',
           'Cache-Control': 'public, max-age=0, must-revalidate',
         },
       }

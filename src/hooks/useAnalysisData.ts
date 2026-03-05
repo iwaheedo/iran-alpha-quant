@@ -11,14 +11,14 @@ const fetcher = async (url: string) => {
 };
 
 // Polling intervals — all hit CDN cache (instant), not serverless functions
-const NEWS_POLL = 60 * 1000;     // Poll news every 60s (CDN-cached for 60s)
-const PRICES_POLL = 60 * 1000;   // Poll prices every 60s (CDN-cached for 60s)
-const ANALYSIS_POLL = 60 * 1000; // Poll analysis every 60s (CDN-cached for 5 min)
+const NEWS_POLL = 60 * 1000;          // Poll news every 60s (CDN-cached for 60s)
+const PRICES_POLL = 60 * 1000;        // Poll prices every 60s (CDN-cached for 60s)
+const ANALYSIS_POLL = 10 * 60 * 1000; // Poll analysis every 10min (CDN-cached for 2h)
 
 // Architecture:
-//   /api/latest      → full AI analysis, CDN-cached 5 min (s-maxage=300)
-//   /api/fetch-news  → RSS news, CDN-cached 60s (s-maxage=60)
-//   /api/fetch-prices→ Finnhub prices, CDN-cached 60s (s-maxage=60)
+//   /api/latest      → full AI analysis, CDN-cached 2h (keeps Groq under 100K TPD free tier)
+//   /api/fetch-news  → RSS news, CDN-cached 60s
+//   /api/fetch-prices→ Finnhub prices, CDN-cached 60s
 //   1000 users = 1 serverless invocation per cache cycle, rest hit CDN
 
 interface LatestResponse {
