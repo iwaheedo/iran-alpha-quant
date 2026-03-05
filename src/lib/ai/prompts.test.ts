@@ -37,8 +37,29 @@ describe('TRADE_SYSTEM_PROMPT', () => {
   });
 
   it('requires second and third-order effects', () => {
-    expect(TRADE_SYSTEM_PROMPT).toContain('SECOND');
-    expect(TRADE_SYSTEM_PROMPT).toContain('THIRD');
+    expect(TRADE_SYSTEM_PROMPT).toContain('second');
+    expect(TRADE_SYSTEM_PROMPT).toContain('third-order');
+  });
+
+  it('includes BAD vs GOOD quality examples', () => {
+    expect(TRADE_SYSTEM_PROMPT).toContain('BAD:');
+    expect(TRADE_SYSTEM_PROMPT).toContain('GOOD:');
+  });
+
+  it('requires quantified catalysts and historical precedent', () => {
+    expect(TRADE_SYSTEM_PROMPT).toContain('quantif');
+    expect(TRADE_SYSTEM_PROMPT).toContain('historical');
+    expect(TRADE_SYSTEM_PROMPT).toContain('precedent');
+  });
+
+  it('requires specific price levels and falsifiable conditions', () => {
+    expect(TRADE_SYSTEM_PROMPT).toContain('price level');
+    expect(TRADE_SYSTEM_PROMPT).toContain('falsifiable');
+  });
+
+  it('references institutional macro investor mindset', () => {
+    expect(TRADE_SYSTEM_PROMPT).toContain('Druckenmiller');
+    expect(TRADE_SYSTEM_PROMPT).toContain('asymmetric');
   });
 });
 

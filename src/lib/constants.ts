@@ -66,6 +66,7 @@ export const TWITTER_ACCOUNTS = [
   'IranIntl',
   'IsraelMFA',
   // Headline bots
+  'FirstSquawk',
   'DeItaone',
   'Fxhedgers',
   'zaborheadlines',

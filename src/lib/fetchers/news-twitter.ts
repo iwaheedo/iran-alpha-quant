@@ -22,7 +22,7 @@ function detectPriority(title: string, handle: string): NewsItem['priority'] {
   // Government accounts and headline bots = HIGH by default
   const highPriorityAccounts = [
     'realDonaldTrump', 'SecDef', 'StateDept', 'IsraPMO',
-    'IranIntl', 'IsraelMFA', 'DeItaone', 'Fxhedgers', 'zaborheadlines',
+    'IranIntl', 'IsraelMFA', 'FirstSquawk', 'DeItaone', 'Fxhedgers', 'zaborheadlines',
   ];
 
   const breakingKeywords = ['breaking', 'just in', 'urgent', 'flash', '🚨', '⚡'];

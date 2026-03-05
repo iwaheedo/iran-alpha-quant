@@ -18,7 +18,7 @@ export default function CausalChain({ steps }: CausalChainProps) {
   return (
     <div className="mb-3 md:mb-4">
       <span className="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-2">
-        Transmission
+        Logic
       </span>
       <div className="flex items-center gap-1.5 causal-chain-row">
         {steps.map((step, i) => {
