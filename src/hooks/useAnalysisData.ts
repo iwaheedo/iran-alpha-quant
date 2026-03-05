@@ -4,7 +4,11 @@ import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction } from '@/types';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
+  return res.json();
+};
 
 // Polling intervals — all hit CDN cache (instant), not serverless functions
 const NEWS_POLL = 60 * 1000;     // Poll news every 60s (CDN-cached for 60s)
@@ -31,10 +35,15 @@ export function useAnalysisData() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Primary: CDN-cached analysis (trades, predictions, regime)
-  const { data: latestData, isLoading: isAnalysisLoading } = useSWR<LatestResponse>(
+  const { data: latestData, isLoading: isAnalysisLoading, error: analysisError } = useSWR<LatestResponse>(
     '/api/latest',
     fetcher,
-    { refreshInterval: ANALYSIS_POLL, revalidateOnFocus: false }
+    {
+      refreshInterval: ANALYSIS_POLL,
+      revalidateOnFocus: false,
+      errorRetryCount: 3,
+      errorRetryInterval: 10000,
+    }
   );
 
   // Live news feed — CDN-cached 60s, polled every 60s
@@ -74,6 +83,9 @@ export function useAnalysisData() {
   const regime = latestData?.regime || null;
   const predictions = latestData?.predictions || [];
 
+  // Check if we got an error response (200 with error field) or SWR error
+  const hasError = !!analysisError || !!(latestData && 'error' in latestData);
+
   return {
     trades,
     news,
@@ -81,6 +93,7 @@ export function useAnalysisData() {
     regime,
     predictions,
     isAnalyzing: isAnalysisLoading && !latestData,
+    analysisError: hasError,
     lastUpdated,
     newsCountdown,
   };

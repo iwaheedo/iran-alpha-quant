@@ -19,6 +19,7 @@ export default function DashboardClient() {
     regime,
     predictions,
     isAnalyzing,
+    analysisError,
     lastUpdated,
     newsCountdown,
   } = useAnalysisData();
@@ -82,6 +83,8 @@ export default function DashboardClient() {
               sortBy={sortBy}
               onSortChange={setSortBy}
               onSwitchToFeed={() => switchTab('feed')}
+              isLoading={isAnalyzing}
+              hasError={analysisError}
             />
           </ErrorBoundary>
         </div>

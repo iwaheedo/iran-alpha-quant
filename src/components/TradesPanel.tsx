@@ -22,6 +22,8 @@ interface TradesPanelProps {
   sortBy: SortOption;
   onSortChange: (s: SortOption) => void;
   onSwitchToFeed: () => void;
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
 export default function TradesPanel({
@@ -36,6 +38,8 @@ export default function TradesPanel({
   sortBy,
   onSortChange,
   onSwitchToFeed,
+  isLoading,
+  hasError,
 }: TradesPanelProps) {
   const polyRef = useRef<HTMLDivElement>(null);
 
@@ -63,17 +67,37 @@ export default function TradesPanel({
 
       {/* Trade cards */}
       <div className="px-4 md:px-6 py-3 md:py-4 space-y-3">
-        {trades.length > 0 ? (
+        {isLoading ? (
+          <div className="bg-white rounded border border-border p-8 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-txt-secondary font-medium">Generating trade ideas...</p>
+            </div>
+            <p className="text-[10px] text-txt-tertiary">
+              AI is analyzing the latest news and market data. This may take up to 60 seconds.
+            </p>
+          </div>
+        ) : trades.length > 0 ? (
           trades.map((trade) => (
             <TradeCard key={trade.id} trade={trade} />
           ))
-        ) : (
-          <div className="bg-white rounded border border-border p-8 text-center">
-            <p className="text-xs text-txt-tertiary mb-2">
-              No trade ideas yet
+        ) : hasError ? (
+          <div className="bg-white rounded border border-amber/30 p-8 text-center">
+            <p className="text-xs text-amber font-medium mb-2">
+              AI analysis temporarily unavailable
             </p>
             <p className="text-[10px] text-txt-tertiary">
-              Click &ldquo;Run Analysis&rdquo; to generate AI-powered trade ideas from the latest news
+              Trade ideas will appear automatically when the next analysis cycle completes. News and prices continue updating live.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded border border-border p-8 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs text-txt-secondary font-medium">Waiting for first analysis...</p>
+            </div>
+            <p className="text-[10px] text-txt-tertiary">
+              Trade ideas will appear automatically once the AI completes its analysis.
             </p>
           </div>
         )}

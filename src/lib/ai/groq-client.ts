@@ -17,7 +17,7 @@ function getClient(): Groq {
 async function callWithRetry(
   systemPrompt: string,
   userPrompt: string,
-  maxRetries = 3
+  maxRetries = 2
 ): Promise<string> {
   const groq = getClient();
 
@@ -46,7 +46,7 @@ async function callWithRetry(
 
       // Rate limit
       if (message.includes('429') || message.includes('rate_limit')) {
-        const delay = Math.pow(2, attempt + 1) * 2000;
+        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s
         console.warn(`[Groq] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;

@@ -59,69 +59,79 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
   createAnalysisRun(runId);
   console.log(`[Analyzer] Starting full analysis (${runId})...`);
 
+  // Step 1: Fetch fresh data in parallel (this should always succeed)
+  console.log('[Analyzer] Step 1: Fetching data...');
+  let news: NewsItem[] = [];
+  let prices: TickerPrice[] = [];
+  let polymarketRaw: PolymarketPrediction[] = [];
+
   try {
-    // Step 1: Fetch fresh data in parallel
-    console.log('[Analyzer] Step 1: Fetching data...');
-    const [news, prices, polymarketRaw] = await Promise.all([
+    [news, prices, polymarketRaw] = await Promise.all([
       fetchAllNews(),
       fetchAllPrices(),
       fetchPolymarket(),
     ]);
+  } catch (err) {
+    console.error('[Analyzer] Data fetch failed:', err instanceof Error ? err.message : err);
+  }
 
-    console.log(`[Analyzer] Data: ${news.length} news, ${prices.length} prices, ${polymarketRaw.length} predictions`);
+  console.log(`[Analyzer] Data: ${news.length} news, ${prices.length} prices, ${polymarketRaw.length} predictions`);
 
-    if (news.length === 0) {
-      throw new Error('No news items fetched — cannot analyze');
-    }
+  // Step 2: Generate trade ideas via AI (may fail — that's OK)
+  let trades: TradeIdea[] = [];
+  let regime: MacroRegime = {
+    label: 'Escalation Watch',
+    level: 'MEDIUM',
+    subtitle: 'Monitoring',
+    summary: 'Geopolitical tensions being monitored.',
+  };
 
-    // Step 2: Generate trade ideas via AI
-    console.log('[Analyzer] Step 2: Generating trade ideas...');
-    const tradePrompt = buildTradeUserPrompt(news, prices);
-    const tradeResponse = await callAI(TRADE_SYSTEM_PROMPT, tradePrompt);
+  if (news.length > 0) {
+    try {
+      console.log('[Analyzer] Step 2: Generating trade ideas...');
+      const tradePrompt = buildTradeUserPrompt(news, prices);
+      const tradeResponse = await callAI(TRADE_SYSTEM_PROMPT, tradePrompt);
 
-    // Parse and validate
-    console.log(`[Analyzer] Raw AI response length: ${tradeResponse.length} chars`);
-    console.log(`[Analyzer] Response preview: ${tradeResponse.substring(0, 200)}...`);
-    const parsed = safeParseJSON(tradeResponse);
-    if (!parsed || typeof parsed !== 'object') {
-      console.error(`[Analyzer] Parse failed. Type: ${typeof parsed}, Value: ${String(parsed).substring(0, 200)}`);
-      console.error(`[Analyzer] Full response (first 500): ${tradeResponse.substring(0, 500)}`);
-      throw new Error(`Failed to parse AI response for trades (${tradeResponse.length} chars, type: ${typeof parsed})`);
-    }
+      console.log(`[Analyzer] Raw AI response length: ${tradeResponse.length} chars`);
+      const parsed = safeParseJSON(tradeResponse);
+      if (parsed && typeof parsed === 'object') {
+        const parsedObj = parsed as Record<string, unknown>;
 
-    const parsedObj = parsed as Record<string, unknown>;
+        regime = validateRegime(parsedObj.regime) || regime;
+        trades = validateTrades(parsedObj.trades);
 
-    // Validate regime
-    const regime = validateRegime(parsedObj.regime) || {
-      label: 'Escalation Watch',
-      level: 'MEDIUM' as const,
-      subtitle: 'Monitoring',
-      summary: 'Geopolitical tensions being monitored.',
-    };
-
-    // Validate trades
-    const trades = validateTrades(parsedObj.trades);
-    if (trades.length === 0) {
-      console.warn('[Analyzer] No valid trades from AI response');
-    }
-
-    // Step 3: Enrich Polymarket predictions with AI estimates
-    let enrichedPredictions = polymarketRaw;
-    if (polymarketRaw.length > 0) {
-      console.log('[Analyzer] Step 3: Enriching Polymarket predictions...');
-      try {
-        const polyPrompt = buildPolymarketUserPrompt(polymarketRaw, news);
-        const polyResponse = await callAI(POLYMARKET_SYSTEM_PROMPT, polyPrompt);
-        const polyParsed = safeParseJSON(polyResponse);
-        enrichedPredictions = validatePolymarketEnrichment(polyParsed, polymarketRaw);
-      } catch (err) {
-        console.error('[Analyzer] Polymarket enrichment failed:', err instanceof Error ? err.message : err);
-        // Continue with un-enriched predictions
+        if (trades.length === 0) {
+          console.warn('[Analyzer] No valid trades from AI response');
+        }
+      } else {
+        console.error(`[Analyzer] Parse failed. Response preview: ${tradeResponse.substring(0, 300)}`);
       }
+    } catch (err) {
+      console.error('[Analyzer] AI trade generation failed:', err instanceof Error ? err.message : err);
+      // Continue with empty trades — news/prices still served
     }
+  } else {
+    console.warn('[Analyzer] No news items fetched — skipping AI analysis');
+  }
 
-    // Step 4: Save everything to DB
-    console.log('[Analyzer] Step 4: Saving results...');
+  // Step 3: Enrich Polymarket predictions with AI estimates
+  let enrichedPredictions = polymarketRaw;
+  if (polymarketRaw.length > 0 && trades.length > 0) {
+    console.log('[Analyzer] Step 3: Enriching Polymarket predictions...');
+    try {
+      const polyPrompt = buildPolymarketUserPrompt(polymarketRaw, news);
+      const polyResponse = await callAI(POLYMARKET_SYSTEM_PROMPT, polyPrompt);
+      const polyParsed = safeParseJSON(polyResponse);
+      enrichedPredictions = validatePolymarketEnrichment(polyParsed, polymarketRaw);
+    } catch (err) {
+      console.error('[Analyzer] Polymarket enrichment failed:', err instanceof Error ? err.message : err);
+      // Continue with un-enriched predictions
+    }
+  }
+
+  // Step 4: Save results
+  console.log('[Analyzer] Step 4: Saving results...');
+  try {
     if (trades.length > 0) {
       saveTradeIdeas(trades, runId);
     }
@@ -129,23 +139,21 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
       savePredictions(enrichedPredictions, runId);
     }
     completeAnalysisRun(runId, news.length, trades.length, regime);
-
-    console.log(`[Analyzer] Analysis complete: ${trades.length} trades, ${enrichedPredictions.length} predictions`);
-
-    return {
-      regime,
-      trades,
-      predictions: enrichedPredictions,
-      news,
-      prices,
-      runId,
-    };
   } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-    console.error(`[Analyzer] Analysis failed: ${errorMsg}`);
-    failAnalysisRun(runId, errorMsg);
-    throw err;
+    console.error('[Analyzer] DB save failed:', err instanceof Error ? err.message : err);
+    failAnalysisRun(runId, err instanceof Error ? err.message : 'Save failed');
   }
+
+  console.log(`[Analyzer] Analysis complete: ${trades.length} trades, ${enrichedPredictions.length} predictions`);
+
+  return {
+    regime,
+    trades,
+    predictions: enrichedPredictions,
+    news,
+    prices,
+    runId,
+  };
 }
 
 // ===== Single News Analysis =====

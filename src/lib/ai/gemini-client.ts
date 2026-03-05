@@ -17,7 +17,7 @@ function getClient(): GoogleGenerativeAI {
 async function callWithRetry(
   systemPrompt: string,
   userPrompt: string,
-  maxRetries = 3
+  maxRetries = 2
 ): Promise<string> {
   const client = getClient();
   const model = client.getGenerativeModel({
@@ -49,7 +49,7 @@ async function callWithRetry(
 
       // Rate limit — exponential backoff
       if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED')) {
-        const delay = Math.pow(2, attempt + 1) * 2000; // 4s, 8s, 16s
+        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s
         console.warn(`[Gemini] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;

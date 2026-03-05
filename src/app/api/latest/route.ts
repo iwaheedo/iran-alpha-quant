@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { runFullAnalysis } from '@/lib/ai/analyzer';
 
 export const maxDuration = 60;
@@ -35,21 +34,25 @@ export async function GET() {
   } catch (err) {
     console.error('[API /latest] Error:', err);
 
+    // Return 200 with empty trades — keeps CDN from caching a hard error.
+    // Short TTL (30s) so the next request retries quickly.
     return new Response(
       JSON.stringify({
-        error: 'Analysis failed',
-        details: err instanceof Error ? err.message : 'Unknown error',
         trades: [],
         news: [],
         prices: [],
         predictions: [],
         regime: null,
+        error: err instanceof Error ? err.message : 'Analysis failed',
+        generatedAt: new Date().toISOString(),
       }),
       {
-        status: 500,
+        status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store',
+          'Vercel-CDN-Cache-Control': 'max-age=30, stale-while-revalidate=10',
+          'CDN-Cache-Control': 'max-age=30, stale-while-revalidate=10',
+          'Cache-Control': 'public, max-age=0, must-revalidate',
         },
       }
     );
