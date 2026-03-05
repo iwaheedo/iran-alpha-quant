@@ -80,9 +80,13 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
     const tradeResponse = await callAI(TRADE_SYSTEM_PROMPT, tradePrompt);
 
     // Parse and validate
+    console.log(`[Analyzer] Raw AI response length: ${tradeResponse.length} chars`);
+    console.log(`[Analyzer] Response preview: ${tradeResponse.substring(0, 200)}...`);
     const parsed = safeParseJSON(tradeResponse);
     if (!parsed || typeof parsed !== 'object') {
-      throw new Error('Failed to parse AI response for trades');
+      console.error(`[Analyzer] Parse failed. Type: ${typeof parsed}, Value: ${String(parsed).substring(0, 200)}`);
+      console.error(`[Analyzer] Full response (first 500): ${tradeResponse.substring(0, 500)}`);
+      throw new Error(`Failed to parse AI response for trades (${tradeResponse.length} chars, type: ${typeof parsed})`);
     }
 
     const parsedObj = parsed as Record<string, unknown>;

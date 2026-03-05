@@ -86,6 +86,8 @@ export const TWITTER_ACCOUNTS = [
   'NoAlphaLimits',
   'burrytracker',
   'BullTheoryio',
+  // Macro / contrarian
+  'zerohedge',
 ];
 
 // ===== Full Watchlist =====
