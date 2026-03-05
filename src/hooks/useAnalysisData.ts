@@ -54,19 +54,19 @@ export function useAnalysisData() {
       // Populate SWR caches directly from analyze response
       // (Vercel serverless doesn't share /tmp SQLite across invocations)
       if (result.trades) {
-        mutateTrades({ trades: result.trades, count: result.trades.length }, { revalidate: false });
+        mutateTrades({ trades: result.trades } as { trades: TradeIdea[] }, { revalidate: false });
       }
       if (result.news) {
-        mutateNews({ news: result.news, count: result.news.length }, { revalidate: false });
+        mutateNews({ news: result.news } as { news: NewsItem[] }, { revalidate: false });
       }
       if (result.prices) {
-        mutatePrices({ prices: result.prices, updatedAt: new Date().toISOString() }, { revalidate: false });
+        mutatePrices({ prices: result.prices } as { prices: TickerPrice[] }, { revalidate: false });
       }
       if (result.regime) {
-        mutateRegime({ regime: result.regime }, { revalidate: false });
+        mutateRegime({ regime: result.regime } as { regime: MacroRegime }, { revalidate: false });
       }
       if (result.predictions) {
-        mutatePolymarket({ predictions: result.predictions, count: result.predictions.length }, { revalidate: false });
+        mutatePolymarket({ predictions: result.predictions } as { predictions: PolymarketPrediction[] }, { revalidate: false });
       }
 
       return result;
