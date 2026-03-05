@@ -81,6 +81,11 @@ export const TWITTER_ACCOUNTS = [
   'WallStJesus',
   'DarioCpx',
   'MarketRebels',
+  // Prediction markets & alpha
+  'Polymarket',
+  'NoAlphaLimits',
+  'burrytracker',
+  'BullTheoryio',
 ];
 
 // ===== Full Watchlist =====

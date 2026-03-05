@@ -21,7 +21,7 @@ async function callWithRetry(
 ): Promise<string> {
   const client = getClient();
   const model = client.getGenerativeModel({
-    model: 'gemini-2.5-flash-preview-05-20',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       temperature: 0.7,
       responseMimeType: 'application/json',
