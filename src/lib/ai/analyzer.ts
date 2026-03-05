@@ -31,22 +31,23 @@ function generateRunId(): string {
 }
 
 async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  // Try Gemini first, fall back to Groq
-  if (isGeminiConfigured()) {
+  // Groq primary (faster, generous free tier: 14,400 RPD)
+  // Gemini fallback (rate-limited on free tier)
+  if (isGroqConfigured()) {
     try {
-      return await geminiGenerate(systemPrompt, userPrompt);
+      return await groqGenerate(systemPrompt, userPrompt);
     } catch (err) {
-      console.error('[Analyzer] Gemini failed:', err instanceof Error ? err.message : err);
-      if (isGroqConfigured()) {
-        console.log('[Analyzer] Falling back to Groq...');
-        return await groqGenerate(systemPrompt, userPrompt);
+      console.error('[Analyzer] Groq failed:', err instanceof Error ? err.message : err);
+      if (isGeminiConfigured()) {
+        console.log('[Analyzer] Falling back to Gemini...');
+        return await geminiGenerate(systemPrompt, userPrompt);
       }
       throw err;
     }
   }
 
-  if (isGroqConfigured()) {
-    return await groqGenerate(systemPrompt, userPrompt);
+  if (isGeminiConfigured()) {
+    return await geminiGenerate(systemPrompt, userPrompt);
   }
 
   throw new Error('No AI provider configured. Set GEMINI_API_KEY or GROQ_API_KEY in .env.local');
