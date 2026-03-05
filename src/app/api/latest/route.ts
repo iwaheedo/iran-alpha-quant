@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { runFullAnalysis } from '@/lib/ai/analyzer';
 
 export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 // CDN-cached: fresh for 5 min, serves stale while revalidating for 1 min after.
 // 1000 users hitting this = 1 serverless invocation, 999 CDN cache hits.
@@ -10,29 +11,32 @@ export async function GET() {
     console.log('[API /latest] Running analysis (CDN cache miss)...');
     const result = await runFullAnalysis();
 
-    const response = NextResponse.json({
-      trades: result.trades,
-      news: result.news,
-      prices: result.prices,
-      predictions: result.predictions,
-      regime: result.regime,
-      runId: result.runId,
-      generatedAt: new Date().toISOString(),
-    });
-
-    // Cache on Vercel CDN for 5 minutes, serve stale for 1 min while revalidating
-    response.headers.set(
-      'Cache-Control',
-      's-maxage=300, stale-while-revalidate=60'
+    return new Response(
+      JSON.stringify({
+        trades: result.trades,
+        news: result.news,
+        prices: result.prices,
+        predictions: result.predictions,
+        regime: result.regime,
+        runId: result.runId,
+        generatedAt: new Date().toISOString(),
+      }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          // Vercel-specific CDN header — not overridden by Next.js
+          'Vercel-CDN-Cache-Control': 'max-age=300, stale-while-revalidate=60',
+          'CDN-Cache-Control': 'max-age=300, stale-while-revalidate=60',
+          'Cache-Control': 'public, max-age=0, must-revalidate',
+        },
+      }
     );
-
-    return response;
   } catch (err) {
     console.error('[API /latest] Error:', err);
 
-    // Don't cache errors — let next request retry
-    const errorResponse = NextResponse.json(
-      {
+    return new Response(
+      JSON.stringify({
         error: 'Analysis failed',
         details: err instanceof Error ? err.message : 'Unknown error',
         trades: [],
@@ -40,10 +44,14 @@ export async function GET() {
         prices: [],
         predictions: [],
         regime: null,
-      },
-      { status: 500 }
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        },
+      }
     );
-    errorResponse.headers.set('Cache-Control', 'no-store');
-    return errorResponse;
   }
 }
