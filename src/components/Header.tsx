@@ -12,11 +12,25 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
     <header className="px-4 md:px-6 py-2.5 md:py-3 border-b border-border flex items-center justify-between">
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <div className="flex items-center gap-2">
-          {/* Pulsing status dot */}
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-down opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-down" />
-          </span>
+          {/* Quant fund logo */}
+          <div className="flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-md bg-txt-primary flex-shrink-0">
+            <svg viewBox="0 0 32 32" fill="none" className="w-5 h-5 md:w-[22px] md:h-[22px]">
+              {/* Bar chart — 4 ascending bars */}
+              <rect x="3" y="20" width="4.5" height="9" rx="1" fill="white" opacity="0.4" />
+              <rect x="10" y="14" width="4.5" height="15" rx="1" fill="white" opacity="0.6" />
+              <rect x="17" y="9" width="4.5" height="20" rx="1" fill="white" opacity="0.8" />
+              <rect x="24" y="4" width="4.5" height="25" rx="1" fill="white" opacity="1" />
+              {/* Alpha trendline overlay */}
+              <polyline
+                points="5,22 12,16 19,11 26,5"
+                stroke="#22c55e"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
+          </div>
           <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">
             Iran Alpha Quant
           </h1>
