@@ -132,6 +132,8 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
       regime,
       trades,
       predictions: enrichedPredictions,
+      news,
+      prices,
       runId,
     };
   } catch (err) {

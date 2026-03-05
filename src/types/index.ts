@@ -123,5 +123,7 @@ export interface AnalysisResponse {
   regime: MacroRegime;
   trades: TradeIdea[];
   predictions: PolymarketPrediction[];
+  news: NewsItem[];
+  prices: TickerPrice[];
   runId: string;
 }

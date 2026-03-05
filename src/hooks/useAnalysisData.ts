@@ -51,14 +51,23 @@ export function useAnalysisData() {
         throw new Error(result.details || 'Analysis failed');
       }
 
-      // Revalidate all data
-      await Promise.all([
-        mutateTrades(),
-        mutateNews(),
-        mutatePrices(),
-        mutateRegime(),
-        mutatePolymarket(),
-      ]);
+      // Populate SWR caches directly from analyze response
+      // (Vercel serverless doesn't share /tmp SQLite across invocations)
+      if (result.trades) {
+        mutateTrades({ trades: result.trades, count: result.trades.length }, { revalidate: false });
+      }
+      if (result.news) {
+        mutateNews({ news: result.news, count: result.news.length }, { revalidate: false });
+      }
+      if (result.prices) {
+        mutatePrices({ prices: result.prices, updatedAt: new Date().toISOString() }, { revalidate: false });
+      }
+      if (result.regime) {
+        mutateRegime({ regime: result.regime }, { revalidate: false });
+      }
+      if (result.predictions) {
+        mutatePolymarket({ predictions: result.predictions, count: result.predictions.length }, { revalidate: false });
+      }
 
       return result;
     } finally {

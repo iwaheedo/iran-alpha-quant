@@ -14,6 +14,8 @@ export async function POST() {
       regime: result.regime,
       trades: result.trades,
       predictions: result.predictions,
+      news: result.news,
+      prices: result.prices,
       runId: result.runId,
       timestamp: new Date().toISOString(),
     });
