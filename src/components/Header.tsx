@@ -61,12 +61,6 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
             Live
           </span>
         )}
-        <a
-          href="/history"
-          className="h-7 px-3 md:px-4 bg-surface-1 border border-border text-[11px] md:text-xs text-txt-secondary rounded hover:bg-surface-2 transition-colors hidden md:flex items-center"
-        >
-          History
-        </a>
       </div>
 
       {/* Mobile extras */}

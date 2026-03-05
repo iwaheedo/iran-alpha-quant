@@ -3,6 +3,7 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction } from '@/types';
+import { FALLBACK_TRADES, FALLBACK_REGIME } from '@/lib/fallback-data';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -79,9 +80,13 @@ export function useAnalysisData() {
   // Merge data: prefer live news/prices over analysis snapshot
   const news = newsData?.news || latestData?.news || [];
   const prices = pricesData?.prices || latestData?.prices || [];
-  const trades = latestData?.trades || [];
-  const regime = latestData?.regime || null;
+  const liveTrades = latestData?.trades || [];
+  const liveRegime = latestData?.regime || null;
   const predictions = latestData?.predictions || [];
+
+  // Use fallback data when AI returns empty trades
+  const trades = liveTrades.length > 0 ? liveTrades : FALLBACK_TRADES;
+  const regime = liveRegime && liveRegime.label !== 'Escalation Watch' ? liveRegime : FALLBACK_REGIME;
 
   // Check if we got an error response (200 with error field) or SWR error
   const hasError = !!analysisError || !!(latestData && 'error' in latestData);

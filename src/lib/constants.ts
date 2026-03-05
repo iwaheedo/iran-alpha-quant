@@ -43,14 +43,16 @@ export const TIME_HORIZON_OPTIONS: { value: TimeHorizon | 'ALL'; label: string }
 // ===== Google News RSS Queries =====
 
 export const NEWS_SEARCH_QUERIES = [
-  'Iran war conflict military',
-  'Middle East geopolitical tensions',
-  'OPEC oil production sanctions Iran',
-  'Strait of Hormuz shipping',
-  'Middle East food supply chain',
-  'defense spending military contracts Iran',
-  'Iran nuclear deal negotiations',
-  'Iran Israel military',
+  'Iran strike attack today',
+  'Iran Israel strike breaking',
+  'US Iran military attack latest',
+  'Strait of Hormuz attack today',
+  'Iran nuclear IAEA breaking',
+  'Qatar Iran negotiations ceasefire',
+  'Iran sanctions latest breaking',
+  'Iran missile drone attack',
+  'IRGC military operation',
+  'Iran proxy Hezbollah Houthi attack',
 ];
 
 // ===== Twitter/X Accounts to Monitor =====
