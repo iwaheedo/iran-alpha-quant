@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { analyzeSpecificNews } from '@/lib/ai/analyzer';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
+const AnalyzeNewsSchema = z.object({
+  newsId: z.string().min(1).max(200),
+});
+
 export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const { allowed, resetAt } = checkRateLimit(`analyze-news:${ip}`, 10, 60_000);
+  if (!allowed) return rateLimitResponse(resetAt);
+
   try {
     const body = await request.json();
-    const { newsId } = body;
+    const parsed = AnalyzeNewsSchema.safeParse(body);
 
-    if (!newsId || typeof newsId !== 'string') {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Missing required field: newsId' },
+        { error: 'Invalid request', details: parsed.error.flatten().fieldErrors },
         { status: 400 }
       );
     }
+
+    const { newsId } = parsed.data;
 
     console.log(`[API /analyze-news] Analyzing news item: ${newsId}`);
     const trades = await analyzeSpecificNews(newsId);

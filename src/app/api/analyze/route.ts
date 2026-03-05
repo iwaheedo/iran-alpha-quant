@@ -1,10 +1,19 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { runFullAnalysis } from '@/lib/ai/analyzer';
+import { requireAuth } from '@/lib/auth';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  const authError = requireAuth(request);
+  if (authError) return authError;
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const { allowed, resetAt } = checkRateLimit(`analyze:${ip}`, 3, 60_000);
+  if (!allowed) return rateLimitResponse(resetAt);
+
   try {
     console.log('[API /analyze] Starting full analysis...');
     const result = await runFullAnalysis();
