@@ -2,13 +2,12 @@ import type { PolymarketPrediction } from '@/types';
 
 const GAMMA_API_URL = 'https://gamma-api.polymarket.com';
 
-// Keywords to filter for relevant markets
-const RELEVANT_KEYWORDS = [
-  'iran', 'middle east', 'oil', 'crude', 'opec',
-  'israel', 'military', 'war', 'nuclear', 'sanctions',
-  'hormuz', 'shipping', 'defense', 'conflict',
-  'gold', 'commodity', 'energy', 'geopolitical',
-  'trump', 'tariff', 'trade war',
+// Keywords to filter — must match Iran-related markets only
+const IRAN_KEYWORDS = [
+  'iran', 'iranian', 'tehran', 'khamenei', 'raisi',
+  'irgc', 'strait of hormuz', 'hormuz', 'persian gulf',
+  'iran nuclear', 'iran sanction', 'iran war', 'iran strike',
+  'iran israel', 'iran attack',
 ];
 
 function generateId(question: string): string {
@@ -50,8 +49,8 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
   const predictions: PolymarketPrediction[] = [];
 
   try {
-    // Fetch active markets — Gamma API supports text search
-    const searchQueries = ['iran', 'oil', 'middle east', 'israel', 'military conflict', 'tariff'];
+    // Fetch active markets — Iran-focused queries only
+    const searchQueries = ['iran', 'iranian', 'hormuz', 'iran nuclear', 'iran israel', 'tehran'];
 
     const allMarkets: GammaMarket[] = [];
 
@@ -89,7 +88,7 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
     // Filter for relevance
     for (const market of uniqueMarkets.values()) {
       const fullText = `${market.question} ${market.description || ''}`.toLowerCase();
-      const isRelevant = RELEVANT_KEYWORDS.some(kw => fullText.includes(kw));
+      const isRelevant = IRAN_KEYWORDS.some(kw => fullText.includes(kw));
 
       if (!isRelevant) continue;
 
@@ -125,8 +124,8 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
 
     // Sort by volume/relevance (most relevant keywords first)
     predictions.sort((a, b) => {
-      const aScore = RELEVANT_KEYWORDS.filter(kw => a.question.toLowerCase().includes(kw)).length;
-      const bScore = RELEVANT_KEYWORDS.filter(kw => b.question.toLowerCase().includes(kw)).length;
+      const aScore = IRAN_KEYWORDS.filter(kw => a.question.toLowerCase().includes(kw)).length;
+      const bScore = IRAN_KEYWORDS.filter(kw => b.question.toLowerCase().includes(kw)).length;
       return bScore - aScore;
     });
 
