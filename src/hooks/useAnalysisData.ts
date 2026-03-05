@@ -7,10 +7,11 @@ import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPredictio
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 // Auto-refresh intervals (in ms)
-// Free tier math (24h page open worst case):
-//   Gemini: 2 calls/run × 288 runs = 576/day (limit: 1,500/day) ✓
-//   Finnhub: 12 symbols/run = 2.4 calls/min (limit: 60/min) ✓
-const ANALYSIS_INTERVAL = 5 * 60 * 1000;  // 5 minutes — full AI re-analysis
+// Free tier math (24h worst case):
+//   Gemini: 2 calls/run × 720 runs = 1,440/day (limit: 1,500/day) ✓
+//   Finnhub: 12 symbols × 30/hr = 6 calls/min (limit: 60/min) ✓
+//   If Gemini exhausted → auto-fallback to Groq (14,400 RPD) ✓
+const ANALYSIS_INTERVAL = 2 * 60 * 1000;  // 2 minutes — full AI re-analysis
 const PRICES_INTERVAL = 2 * 60 * 1000;    // 2 minutes — price ticker refresh
 
 export function useAnalysisData() {
