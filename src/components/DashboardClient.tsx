@@ -20,6 +20,8 @@ export default function DashboardClient() {
     regime,
     predictions,
     isAnalyzing,
+    lastUpdated,
+    newsCountdown,
     runAnalysis,
     analyzeNews,
   } = useAnalysisData();
@@ -64,7 +66,13 @@ export default function DashboardClient() {
           style={{ height: 'calc(100vh - 76px - 56px)' }}
         >
           <ErrorBoundary>
-            <NewsFeed news={news} onAnalyze={handleAnalyzeNews} />
+            <NewsFeed
+              news={news}
+              onAnalyze={handleAnalyzeNews}
+              lastUpdated={lastUpdated}
+              countdown={newsCountdown}
+              isAnalyzing={isAnalyzing}
+            />
           </ErrorBoundary>
         </div>
 

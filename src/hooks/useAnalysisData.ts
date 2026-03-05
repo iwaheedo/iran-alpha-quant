@@ -6,36 +6,42 @@ import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPredictio
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-// Auto-refresh intervals (in ms)
+// Polling intervals
+const NEWS_INTERVAL = 60;        // 60 seconds — lightweight RSS poll
+const PRICES_INTERVAL = 60;      // 60 seconds — Finnhub poll
+const AI_INTERVAL = 15 * 60;     // 15 minutes — full AI re-analysis
+
 // Free tier math (24h worst case):
-//   Gemini: 2 calls/run × 720 runs = 1,440/day (limit: 1,500/day) ✓
-//   Finnhub: 12 symbols × 30/hr = 6 calls/min (limit: 60/min) ✓
-//   If Gemini exhausted → auto-fallback to Groq (14,400 RPD) ✓
-const ANALYSIS_INTERVAL = 2 * 60 * 1000;  // 2 minutes — full AI re-analysis
-const PRICES_INTERVAL = 2 * 60 * 1000;    // 2 minutes — price ticker refresh
+//   News: RSS feeds, no limit ✓
+//   Prices: 12 symbols × 60/hr = 12 calls/min (limit: 60/min) ✓
+//   Gemini: 2 calls/run × 96 runs/day = 192/day (limit: 1,500/day) ✓
 
 export function useAnalysisData() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [newsCountdown, setNewsCountdown] = useState(NEWS_INTERVAL);
   const hasAutoRun = useRef(false);
-  const analysisTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isAnalyzingRef = useRef(false);
 
+  // --- SWR caches (initial fetch disabled since DB is ephemeral on Vercel) ---
   const { data: tradesData, mutate: mutateTrades } = useSWR<{ trades: TradeIdea[] }>(
     '/api/trades',
     fetcher,
     { refreshInterval: 0, revalidateOnFocus: false }
   );
 
+  // News polls every 60s via live RSS fetch
   const { data: newsData, mutate: mutateNews } = useSWR<{ news: NewsItem[] }>(
-    '/api/news',
+    '/api/fetch-news',
     fetcher,
-    { refreshInterval: 0, revalidateOnFocus: false }
+    { refreshInterval: NEWS_INTERVAL * 1000, revalidateOnFocus: false }
   );
 
-  // Prices refresh every 2 min via live Finnhub fetch
+  // Prices poll every 60s via live Finnhub fetch
   const { data: pricesData, mutate: mutatePrices } = useSWR<{ prices: TickerPrice[] }>(
     '/api/fetch-prices',
     fetcher,
-    { refreshInterval: PRICES_INTERVAL, revalidateOnFocus: false }
+    { refreshInterval: PRICES_INTERVAL * 1000, revalidateOnFocus: false }
   );
 
   const { data: regimeData, mutate: mutateRegime } = useSWR<{ regime: MacroRegime }>(
@@ -50,8 +56,29 @@ export function useAnalysisData() {
     { refreshInterval: 0, revalidateOnFocus: false }
   );
 
+  // --- Countdown timer (ticks every second) ---
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNewsCountdown(prev => {
+        if (prev <= 1) return NEWS_INTERVAL; // Reset after hitting 0
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Reset countdown when news data refreshes
+  useEffect(() => {
+    if (newsData) {
+      setLastUpdated(new Date());
+      setNewsCountdown(NEWS_INTERVAL);
+    }
+  }, [newsData]);
+
+  // --- Full AI analysis ---
   const runAnalysis = useCallback(async () => {
-    if (isAnalyzing) return;
+    if (isAnalyzingRef.current) return;
+    isAnalyzingRef.current = true;
     setIsAnalyzing(true);
 
     try {
@@ -62,8 +89,7 @@ export function useAnalysisData() {
         throw new Error(result.details || 'Analysis failed');
       }
 
-      // Populate SWR caches directly from analyze response
-      // (Vercel serverless doesn't share /tmp SQLite across invocations)
+      // Populate SWR caches directly from response
       if (result.trades) {
         mutateTrades({ trades: result.trades } as { trades: TradeIdea[] }, { revalidate: false });
       }
@@ -80,29 +106,33 @@ export function useAnalysisData() {
         mutatePolymarket({ predictions: result.predictions } as { predictions: PolymarketPrediction[] }, { revalidate: false });
       }
 
+      setLastUpdated(new Date());
+      setNewsCountdown(NEWS_INTERVAL);
       return result;
     } finally {
+      isAnalyzingRef.current = false;
       setIsAnalyzing(false);
     }
-  }, [isAnalyzing, mutateTrades, mutateNews, mutatePrices, mutateRegime, mutatePolymarket]);
+  }, [mutateTrades, mutateNews, mutatePrices, mutateRegime, mutatePolymarket]);
 
-  // Auto-run analysis on first page load + every 30 minutes
+  // --- Auto-run: AI analysis on mount + every 15 minutes ---
   useEffect(() => {
     if (!hasAutoRun.current) {
       hasAutoRun.current = true;
-      // Small delay so the UI renders first, then analysis starts
-      const timeout = setTimeout(() => {
+
+      // Run analysis after a short delay (let UI render first)
+      const initialTimeout = setTimeout(() => {
         runAnalysis();
       }, 500);
 
-      // Set up recurring analysis every 30 minutes
-      analysisTimer.current = setInterval(() => {
+      // Re-run AI analysis every 15 minutes
+      const aiInterval = setInterval(() => {
         runAnalysis();
-      }, ANALYSIS_INTERVAL);
+      }, AI_INTERVAL * 1000);
 
       return () => {
-        clearTimeout(timeout);
-        if (analysisTimer.current) clearInterval(analysisTimer.current);
+        clearTimeout(initialTimeout);
+        clearInterval(aiInterval);
       };
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -123,6 +153,8 @@ export function useAnalysisData() {
     regime: regimeData?.regime || null,
     predictions: polymarketData?.predictions || [],
     isAnalyzing,
+    lastUpdated,
+    newsCountdown,
     runAnalysis,
     analyzeNews,
   };

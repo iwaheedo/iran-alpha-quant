@@ -12,9 +12,16 @@ export default function Header({ regime, isAnalyzing, onRunAnalysis }: HeaderPro
   return (
     <header className="px-4 md:px-6 py-2.5 md:py-3 border-b border-border flex items-center justify-between">
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
-        <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">
-          Iran Alpha Quant
-        </h1>
+        <div className="flex items-center gap-2">
+          {/* Pulsing status dot */}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-down opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-down" />
+          </span>
+          <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">
+            Iran Alpha Quant
+          </h1>
+        </div>
         <div className="h-4 w-px bg-border hidden md:block" />
         <span className="text-[10px] md:text-xs text-txt-secondary hidden md:inline truncate">
           {regime?.subtitle || 'Ready'}
