@@ -6,7 +6,7 @@ import type { TradeIdea, Category, TimeHorizon } from '@/types';
 export type SortOption = 'conviction' | 'orderType';
 
 export function useFilters(trades: TradeIdea[]) {
-  const [activeHorizon, setActiveHorizon] = useState<TimeHorizon | 'ALL'>('DAYS');
+  const [activeHorizon, setActiveHorizon] = useState<TimeHorizon | 'ALL'>('ALL');
   const [activeCategory, setActiveCategory] = useState<Category | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<SortOption>('conviction');
   const [newsFilter, setNewsFilter] = useState<'all' | 'news' | 'twitter'>('all');
