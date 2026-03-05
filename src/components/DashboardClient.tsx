@@ -8,7 +8,6 @@ import Header from './Header';
 import NewsFeed from './NewsFeed';
 import TradesPanel from './TradesPanel';
 import MobileNav from './MobileNav';
-import AnalysisProgress from './AnalysisProgress';
 import ErrorBoundary from './ErrorBoundary';
 import { cn } from '@/lib/utils';
 
@@ -22,8 +21,6 @@ export default function DashboardClient() {
     isAnalyzing,
     lastUpdated,
     newsCountdown,
-    runAnalysis,
-    analyzeNews,
   } = useAnalysisData();
 
   const {
@@ -38,22 +35,10 @@ export default function DashboardClient() {
 
   const { activeTab, switchTab } = useMobileNav();
 
-  const handleAnalyzeNews = async (newsId: string) => {
-    try {
-      await analyzeNews(newsId);
-    } catch (err) {
-      console.error('Failed to analyze news:', err);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <TickerBar prices={prices} />
-      <Header
-        regime={regime}
-        isAnalyzing={isAnalyzing}
-        onRunAnalysis={runAnalysis}
-      />
+      <Header regime={regime} isAnalyzing={isAnalyzing} />
 
       {/* Main layout */}
       <div className="desktop-layout h-[calc(100vh-76px)] md:h-[calc(100vh-76px)]" style={{ display: 'flex' }}>
@@ -68,7 +53,7 @@ export default function DashboardClient() {
           <ErrorBoundary>
             <NewsFeed
               news={news}
-              onAnalyze={handleAnalyzeNews}
+              onAnalyze={() => {}}
               lastUpdated={lastUpdated}
               countdown={newsCountdown}
               isAnalyzing={isAnalyzing}
@@ -103,7 +88,6 @@ export default function DashboardClient() {
       </div>
 
       <MobileNav activeTab={activeTab} onSwitchTab={switchTab} />
-      <AnalysisProgress isAnalyzing={isAnalyzing} />
     </div>
   );
 }

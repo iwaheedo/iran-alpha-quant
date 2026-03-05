@@ -1,28 +1,33 @@
 import { NextResponse } from 'next/server';
 import { fetchAllPrices } from '@/lib/fetchers';
 
-export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
-async function handlePriceFetch() {
+// CDN-cached: fresh for 60s, stale-while-revalidate for 30s
+export async function GET() {
   try {
-    console.log('[API /fetch-prices] Triggering price fetch...');
+    console.log('[API /fetch-prices] Fetching prices (CDN cache miss)...');
     const prices = await fetchAllPrices();
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       prices,
       count: prices.length,
       timestamp: new Date().toISOString(),
     });
+
+    response.headers.set(
+      'Cache-Control',
+      's-maxage=60, stale-while-revalidate=30'
+    );
+
+    return response;
   } catch (err) {
     console.error('[API /fetch-prices] Error:', err);
-    return NextResponse.json(
-      { prices: [], error: 'Failed to fetch prices', details: err instanceof Error ? err.message : 'Unknown error' },
+    const errorResponse = NextResponse.json(
+      { prices: [], error: 'Failed to fetch prices' },
       { status: 500 }
     );
+    errorResponse.headers.set('Cache-Control', 'no-store');
+    return errorResponse;
   }
 }
-
-// Both GET and POST trigger a live price fetch from Finnhub
-export const GET = handlePriceFetch;
-export const POST = handlePriceFetch;
