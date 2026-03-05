@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #ffffff;
+  --color-surface-1: #f7f8fa;
+  --color-surface-2: #eef0f4;
+  --color-surface-3: #e2e5eb;
+  --color-border: #dfe2e8;
+  --color-border-dark: #c4c9d4;
+  --color-txt-primary: #1a1d26;
+  --color-txt-secondary: #4a5068;
+  --color-txt-tertiary: #7c8299;
+  --color-up: #0d8c5a;
+  --color-down: #d12b2b;
+  --color-blue: #2962ff;
+  --color-blue-light: #e8eeff;
+  --color-amber: #c68a00;
+  --color-tag-shipping: #0369a1;
+  --color-tag-currency: #7c3aed;
+  --color-tag-em: #c2410c;
+  --color-tag-commodity: #b45309;
+  --color-tag-agriculture: #15803d;
+  --color-tag-defense: #64748b;
+  --color-tag-energy: #dc2626;
+  --color-tag-consumer: #0891b2;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-txt-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+* { scrollbar-width: thin; scrollbar-color: #dfe2e8 transparent; }
+*::-webkit-scrollbar { width: 5px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: #dfe2e8; border-radius: 10px; }
+
+/* Ticker animation */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-anim { animation: ticker 45s linear infinite; }
+
+/* Row hover */
+.row-hover { transition: background 0.15s; }
+.row-hover:hover { background: #f7f8fa; }
+
+/* Mobile tab switching */
+@media (max-width: 767px) {
+  .mobile-panel { display: none !important; }
+  .mobile-panel.active { display: flex !important; }
+}
+
+/* Desktop: always show both panels side by side */
+@media (min-width: 768px) {
+  .mobile-panel { display: flex !important; }
+  .mobile-nav { display: none !important; }
+  .desktop-layout { display: flex !important; }
+}
+
+/* Mobile: stack panels, show nav */
+@media (max-width: 767px) {
+  .desktop-layout { display: block !important; }
+  .mobile-nav { display: flex !important; }
+  .left-panel { width: 100% !important; border-right: none !important; }
+  .right-panel { width: 100% !important; }
+  .desktop-header-extras { display: none !important; }
+  .mobile-header-extras { display: flex !important; }
+  .causal-chain-row { flex-wrap: wrap; gap: 6px !important; }
+}
+
+/* Smooth transitions for mobile panels */
+.mobile-panel { animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Active mobile tab indicator */
+.mobile-tab.active { color: #2962ff; }
+.mobile-tab.active .tab-dot { background: #2962ff; }

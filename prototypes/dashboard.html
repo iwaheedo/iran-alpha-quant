@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iran Alpha Quant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#ffffff',
+            surface: { 1: '#f7f8fa', 2: '#eef0f4', 3: '#e2e5eb' },
+            border: { DEFAULT: '#dfe2e8', dark: '#c4c9d4' },
+            txt: { primary: '#1a1d26', secondary: '#4a5068', tertiary: '#7c8299' },
+            up: '#0d8c5a',
+            down: '#d12b2b',
+            blue: { DEFAULT: '#2962ff', light: '#e8eeff' },
+            amber: '#c68a00',
+            tag: {
+              shipping: '#0369a1',
+              currency: '#7c3aed',
+              em: '#c2410c',
+              commodity: '#b45309',
+              agriculture: '#15803d',
+              defense: '#64748b',
+              energy: '#dc2626',
+              consumer: '#0891b2',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background: #fff; -webkit-font-smoothing: antialiased; }
+    * { scrollbar-width: thin; scrollbar-color: #dfe2e8 transparent; }
+    *::-webkit-scrollbar { width: 5px; }
+    *::-webkit-scrollbar-track { background: transparent; }
+    *::-webkit-scrollbar-thumb { background: #dfe2e8; border-radius: 10px; }
+    @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .ticker-anim { animation: ticker 45s linear infinite; }
+    .row-hover { transition: background 0.15s; }
+    .row-hover:hover { background: #f7f8fa; }
+
+    /* Mobile tab switching */
+    @media (max-width: 767px) {
+      .mobile-panel { display: none !important; }
+      .mobile-panel.active { display: flex !important; }
+    }
+
+    /* Desktop: always show both panels side by side */
+    @media (min-width: 768px) {
+      .mobile-panel { display: flex !important; }
+      .mobile-nav { display: none !important; }
+      .desktop-layout { display: flex !important; }
+    }
+
+    /* Mobile: stack panels, show nav */
+    @media (max-width: 767px) {
+      .desktop-layout { display: block !important; }
+      .mobile-nav { display: flex !important; }
+      .left-panel { width: 100% !important; border-right: none !important; }
+      .right-panel { width: 100% !important; }
+      .desktop-header-extras { display: none !important; }
+      .mobile-header-extras { display: flex !important; }
+      .causal-chain-row { flex-wrap: wrap; gap: 6px !important; }
+    }
+
+    /* Smooth transitions for mobile panels */
+    .mobile-panel { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Active mobile tab indicator */
+    .mobile-tab.active { color: #2962ff; }
+    .mobile-tab.active .tab-dot { background: #2962ff; }
+  </style>
+</head>
+<body class="font-sans text-txt-primary min-h-screen">
+
+  <!-- ===== TICKER BAR ===== -->
+  <div class="h-8 bg-surface-1 border-b border-border flex items-center overflow-hidden">
+    <div class="flex-shrink-0 px-2 md:px-3 h-full flex items-center gap-1.5 border-r border-border">
+      <div class="w-1.5 h-1.5 rounded-full bg-up"></div>
+      <span class="font-mono text-[9px] text-txt-tertiary tracking-widest uppercase">Live</span>
+    </div>
+    <div class="overflow-hidden flex-1">
+      <div class="flex gap-4 md:gap-6 px-3 md:px-4 ticker-anim whitespace-nowrap">
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">WTI</span> <span class="text-txt-primary font-medium">82.45</span> <span class="text-up">+2.31%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">BRENT</span> <span class="text-txt-primary font-medium">86.12</span> <span class="text-up">+1.87%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">GOLD</span> <span class="text-txt-primary font-medium">2,341</span> <span class="text-up">+0.82%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">DXY</span> <span class="text-txt-primary font-medium">105.2</span> <span class="text-up">+0.41%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">ZIM</span> <span class="text-txt-primary font-medium">24.80</span> <span class="text-up">+5.72%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">ITA</span> <span class="text-txt-primary font-medium">142.6</span> <span class="text-up">+1.24%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">EEM</span> <span class="text-txt-primary font-medium">39.20</span> <span class="text-down">−1.81%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">TLT</span> <span class="text-txt-primary font-medium">92.40</span> <span class="text-down">−0.93%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">SPY</span> <span class="text-txt-primary font-medium">512.3</span> <span class="text-down">−0.38%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">BTC</span> <span class="text-txt-primary font-medium">67,240</span> <span class="text-down">−1.22%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">WEAT</span> <span class="text-txt-primary font-medium">5.82</span> <span class="text-up">+3.20%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">DBA</span> <span class="text-txt-primary font-medium">23.10</span> <span class="text-up">+1.48%</span></span>
+        <!-- dup for seamless scroll -->
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">WTI</span> <span class="text-txt-primary font-medium">82.45</span> <span class="text-up">+2.31%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">BRENT</span> <span class="text-txt-primary font-medium">86.12</span> <span class="text-up">+1.87%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">GOLD</span> <span class="text-txt-primary font-medium">2,341</span> <span class="text-up">+0.82%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">DXY</span> <span class="text-txt-primary font-medium">105.2</span> <span class="text-up">+0.41%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">ZIM</span> <span class="text-txt-primary font-medium">24.80</span> <span class="text-up">+5.72%</span></span>
+        <span class="font-mono text-[11px]"><span class="text-txt-tertiary">ITA</span> <span class="text-txt-primary font-medium">142.6</span> <span class="text-up">+1.24%</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HEADER (Desktop) ===== -->
+  <header class="px-4 md:px-6 py-2.5 md:py-3 border-b border-border flex items-center justify-between">
+    <div class="flex items-center gap-2 md:gap-4 min-w-0">
+      <h1 class="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">Iran Alpha Quant</h1>
+      <div class="h-4 w-px bg-border hidden md:block"></div>
+      <span class="text-[10px] md:text-xs text-txt-secondary hidden md:inline truncate">Escalation Phase — Market Pricing Limited Conflict</span>
+      <span class="text-[9px] md:text-[10px] font-medium text-amber bg-amber/10 px-1.5 md:px-2 py-0.5 rounded whitespace-nowrap">REGIME SHIFT: MEDIUM</span>
+    </div>
+    <div class="flex items-center gap-2 md:gap-3 desktop-header-extras">
+      <a href="https://x.com/iwaheedo" target="_blank" class="text-[10px] text-txt-tertiary hover:text-blue transition-colors hidden md:inline">Created by <span class="font-medium text-txt-secondary">@iwaheedo</span></a>
+      <div class="h-4 w-px bg-border hidden md:block"></div>
+      <span class="text-[10px] text-txt-tertiary font-mono hidden md:inline">Updated 2 min ago</span>
+      <button class="h-7 px-3 md:px-4 bg-blue text-white text-[11px] md:text-xs font-medium rounded hover:bg-blue-600 transition-colors">Run Analysis</button>
+      <a href="#" class="h-7 px-3 md:px-4 bg-surface-1 border border-border text-[11px] md:text-xs text-txt-secondary rounded hover:bg-surface-2 transition-colors hidden md:flex items-center">History</a>
+    </div>
+    <!-- Mobile header extras -->
+    <div class="items-center gap-2 mobile-header-extras" style="display:none">
+      <a href="https://x.com/iwaheedo" target="_blank" class="text-[9px] text-txt-tertiary">by <span class="font-medium text-txt-secondary">@iwaheedo</span></a>
+      <button class="h-7 px-3 bg-blue text-white text-[11px] font-medium rounded">Analyze</button>
+    </div>
+  </header>
+
+  <!-- ===== MAIN ===== -->
+  <div class="desktop-layout h-[calc(100vh-76px)] md:h-[calc(100vh-76px)]" style="display:flex">
+
+    <!-- LEFT: NEWS FEED -->
+    <div class="left-panel w-full md:w-[380px] border-r border-border flex flex-col flex-shrink-0 mobile-panel" id="panel-feed" style="height: calc(100vh - 76px - 56px);">
+      <div class="px-4 py-2.5 border-b border-border flex items-center justify-between bg-surface-1">
+        <span class="text-xs font-bold text-txt-primary uppercase tracking-wide">Intel Feed</span>
+        <div class="flex gap-px bg-surface-2 rounded overflow-hidden">
+          <button class="px-2.5 py-1 text-[10px] font-semibold bg-white text-txt-primary shadow-sm">All</button>
+          <button class="px-2.5 py-1 text-[10px] font-medium text-txt-tertiary hover:text-txt-secondary">News</button>
+          <button class="px-2.5 py-1 text-[10px] font-medium text-txt-tertiary hover:text-txt-secondary">X</button>
+        </div>
+      </div>
+
+      <div class="overflow-y-auto flex-1">
+
+        <!-- BREAKING -->
+        <div class="px-4 py-3 border-b border-border bg-down/[0.03] row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[9px] font-bold text-white bg-down px-1.5 py-px rounded tracking-wider uppercase">Breaking</span>
+            <span class="text-[10px] text-txt-tertiary font-mono">2m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">@realDonaldTrump</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">"Iran has made a very big mistake. The full force of the American Military is at the ready. We are locked and loaded!"</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[10px] text-txt-tertiary font-mono">245K likes · 89K reposts</span>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- Reuters -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[9px] font-bold text-white bg-amber px-1.5 py-px rounded tracking-wider uppercase">High</span>
+            <span class="text-[10px] text-txt-tertiary font-mono">8m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">Reuters</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">U.S. Navy deploys third carrier strike group to Persian Gulf amid rising tensions with Iran</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <div class="flex gap-1">
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Military</span>
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Naval</span>
+            </div>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- Kobeissi -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] text-txt-tertiary font-mono">12m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">@KobeissiLetter</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">Oil futures just spiked 4% on Iran escalation. But here's what most traders are missing — shipping insurance for Gulf tankers just hit record premiums. This is 2024 Red Sea all over again.</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[10px] text-txt-tertiary font-mono">12.4K likes</span>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- Bloomberg -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[9px] font-bold text-white bg-amber px-1.5 py-px rounded tracking-wider uppercase">High</span>
+            <span class="text-[10px] text-txt-tertiary font-mono">18m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">Bloomberg</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">Iran threatens to close Strait of Hormuz if sanctions escalate, oil markets brace for disruption</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <div class="flex gap-1">
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Oil</span>
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Shipping</span>
+            </div>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- unusual_whales -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] text-txt-tertiary font-mono">24m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">@unusual_whales</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">Massive call buying on LMT (Lockheed Martin) $520 strike, June expiry. Over 15,000 contracts in the last hour. Smart money positioning for defense spending surge.</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[10px] text-txt-tertiary font-mono">8.1K likes</span>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- DeItaone BREAKING -->
+        <div class="px-4 py-3 border-b border-border bg-down/[0.03] row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[9px] font-bold text-white bg-down px-1.5 py-px rounded tracking-wider uppercase">Breaking</span>
+            <span class="text-[10px] text-txt-tertiary font-mono">41m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">@DeItaone</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed font-medium">*IRAN REVOLUTIONARY GUARD: ANY ATTACK ON IRAN WILL BE MET WITH FULL RETALIATION AGAINST U.S. BASES IN REGION</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <span class="text-[10px] text-txt-tertiary font-mono">34K likes</span>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- FT -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] text-txt-tertiary font-mono">35m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">Financial Times</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">India and Japan scramble for alternative oil suppliers as Gulf tensions threaten imports</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <div class="flex gap-1">
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">EM Impact</span>
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Currency</span>
+            </div>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+        <!-- Al Jazeera -->
+        <div class="px-4 py-3 border-b border-border row-hover cursor-pointer">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-[10px] text-txt-tertiary font-mono">52m ago</span>
+            <span class="ml-auto text-[10px] text-txt-tertiary">Al Jazeera</span>
+          </div>
+          <p class="text-[12px] text-txt-primary leading-relaxed">Food prices surge across Middle East as conflict disrupts wheat and fertilizer supply chains</p>
+          <div class="flex items-center justify-between mt-1.5">
+            <div class="flex gap-1">
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Food</span>
+              <span class="text-[9px] text-txt-tertiary font-medium px-1.5 py-0.5 bg-surface-2 rounded">Agriculture</span>
+            </div>
+            <button class="text-[10px] text-blue font-medium hover:underline">Analyze →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: TRADE IDEAS -->
+    <div class="right-panel flex-1 overflow-y-auto bg-surface-1 mobile-panel active flex-col" id="panel-trades" style="height: calc(100vh - 76px - 56px);">
+
+      <!-- Tabs + Filters -->
+      <div class="sticky top-0 bg-surface-1 z-10 border-b border-border">
+        <div class="px-4 md:px-6 py-2 flex items-center gap-4 md:gap-6">
+          <button class="text-[11px] md:text-xs font-bold text-txt-primary uppercase tracking-wide border-b-2 border-blue pb-2 pt-1">Trade Ideas</button>
+          <button class="text-[11px] md:text-xs font-medium text-txt-tertiary uppercase tracking-wide pb-2 pt-1 hover:text-txt-secondary" onclick="document.getElementById('poly').scrollIntoView({behavior:'smooth'})">Polymarket</button>
+          <div class="ml-auto hidden md:flex items-center gap-2">
+            <span class="text-[10px] text-txt-tertiary">Sort:</span>
+            <select class="bg-white border border-border rounded text-[10px] text-txt-secondary px-2 py-1 focus:outline-none focus:border-blue">
+              <option>Conviction High → Low</option>
+              <option>Effect Order</option>
+            </select>
+          </div>
+        </div>
+        <!-- Time horizon filters -->
+        <div class="px-4 md:px-6 pb-2 flex items-center gap-1 overflow-x-auto">
+          <span class="text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-2 hidden md:inline">Horizon</span>
+          <button class="px-3 py-1 text-[10px] font-semibold rounded bg-blue text-white whitespace-nowrap flex-shrink-0">Days</button>
+          <button class="px-3 py-1 text-[10px] font-medium rounded bg-surface-2 text-txt-secondary hover:bg-surface-3 transition-colors whitespace-nowrap flex-shrink-0">Weeks</button>
+          <button class="px-3 py-1 text-[10px] font-medium rounded bg-surface-2 text-txt-secondary hover:bg-surface-3 transition-colors whitespace-nowrap flex-shrink-0">Months</button>
+          <button class="px-3 py-1 text-[10px] font-medium rounded bg-surface-2 text-txt-secondary hover:bg-surface-3 transition-colors whitespace-nowrap flex-shrink-0">1 Year+</button>
+          <button class="px-3 py-1 text-[10px] font-medium rounded bg-surface-2 text-txt-tertiary hover:bg-surface-3 transition-colors whitespace-nowrap flex-shrink-0">All</button>
+        </div>
+        <!-- Category filter chips (scrollable on mobile) -->
+        <div class="px-4 md:px-6 pb-2.5 flex items-center gap-1.5 overflow-x-auto">
+          <span class="text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-1 hidden md:inline">Sector</span>
+          <button class="px-2.5 py-0.5 text-[9px] font-semibold rounded-full bg-txt-primary text-white whitespace-nowrap flex-shrink-0">All</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-shipping/30 text-tag-shipping bg-tag-shipping/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-shipping/10">Shipping</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-currency/30 text-tag-currency bg-tag-currency/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-currency/10">Currency</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-em/30 text-tag-em bg-tag-em/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-em/10">Emerging Mkts</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-commodity/30 text-tag-commodity bg-tag-commodity/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-commodity/10">Commodities</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-energy/30 text-tag-energy bg-tag-energy/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-energy/10">Energy</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-agriculture/30 text-tag-agriculture bg-tag-agriculture/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-agriculture/10">Agriculture</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-defense/30 text-tag-defense bg-tag-defense/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-defense/10">Defense</button>
+          <button class="px-2.5 py-0.5 text-[9px] font-medium rounded-full border border-tag-consumer/30 text-tag-consumer bg-tag-consumer/5 whitespace-nowrap flex-shrink-0 hover:bg-tag-consumer/10">Consumer</button>
+        </div>
+      </div>
+
+      <!-- Mobile: compact breaking news ticker (hidden on desktop) -->
+      <div class="md:hidden mx-4 mt-3">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-[9px] font-bold text-txt-primary uppercase tracking-widest">Breaking Intel</span>
+          <div class="flex-1 h-px bg-border"></div>
+          <button class="text-[9px] text-blue font-medium" onclick="switchTab('feed')">See all →</button>
+        </div>
+        <div class="space-y-1.5">
+          <div class="flex items-start gap-2 p-2 bg-down/[0.03] rounded border border-down/10 cursor-pointer" onclick="switchTab('feed')">
+            <span class="text-[8px] font-bold text-white bg-down px-1 py-px rounded tracking-wider uppercase flex-shrink-0 mt-0.5">BRK</span>
+            <p class="text-[11px] text-txt-primary leading-snug line-clamp-2">"Iran has made a very big mistake. The full force of the American Military is at the ready." — @realDonaldTrump <span class="text-txt-tertiary">2m</span></p>
+          </div>
+          <div class="flex items-start gap-2 p-2 bg-white rounded border border-border cursor-pointer" onclick="switchTab('feed')">
+            <span class="text-[8px] font-bold text-white bg-amber px-1 py-px rounded tracking-wider uppercase flex-shrink-0 mt-0.5">HIGH</span>
+            <p class="text-[11px] text-txt-primary leading-snug line-clamp-1">U.S. Navy deploys third carrier strike group to Persian Gulf — <span class="text-txt-tertiary">Reuters · 8m</span></p>
+          </div>
+          <div class="flex items-start gap-2 p-2 bg-down/[0.03] rounded border border-down/10 cursor-pointer" onclick="switchTab('feed')">
+            <span class="text-[8px] font-bold text-white bg-down px-1 py-px rounded tracking-wider uppercase flex-shrink-0 mt-0.5">BRK</span>
+            <p class="text-[11px] text-txt-primary leading-snug line-clamp-1">*IRAN: ANY ATTACK WILL BE MET WITH FULL RETALIATION AGAINST U.S. BASES — <span class="text-txt-tertiary">@DeItaone · 41m</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regime box -->
+      <div class="mx-4 md:mx-6 mt-3 md:mt-4 p-3 md:p-4 bg-white rounded border border-border">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] font-bold text-txt-primary uppercase tracking-wide">Macro Regime Assessment</span>
+          <span class="text-[9px] font-bold text-amber bg-amber/10 px-2 py-0.5 rounded uppercase tracking-wider">Regime Shift: Medium</span>
+        </div>
+        <p class="text-[11px] text-txt-secondary leading-relaxed">Market pricing limited conflict but underestimating supply chain cascading effects. Key variables: oil supply, USD safe-haven flows, EM currency stress. The consensus "buy oil, buy defense" trade is crowded. Alpha lies in second-order shipping, agriculture, and EM currency plays.</p>
+      </div>
+
+      <div class="px-4 md:px-6 py-3 md:py-4 space-y-3">
+
+        <!-- ===== TRADE 1: ZIM ===== -->
+        <div class="bg-white rounded border border-border overflow-hidden">
+          <!-- Header row -->
+          <div class="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-[9px] font-bold text-white bg-up px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Long</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">ZIM</span>
+                <span class="text-[11px] text-txt-tertiary hidden md:inline">ZIM Integrated Shipping</span>
+                <span class="font-mono text-[11px] text-txt-secondary">$24.80</span>
+                <span class="font-mono text-[11px] text-up font-medium">+5.72%</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">8<span class="text-txt-tertiary font-normal">/10</span></span>
+              </div>
+            </div>
+            <!-- Tags row -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold text-blue bg-blue/light px-2 py-0.5 rounded uppercase tracking-wider">2nd Order</span>
+              <span class="text-[9px] font-medium text-tag-shipping bg-tag-shipping/8 px-2 py-0.5 rounded-full">Shipping</span>
+              <span class="text-[10px] text-txt-tertiary font-mono ml-auto">2M horizon</span>
+            </div>
+          </div>
+
+          <div class="p-4 md:p-5">
+            <!-- Thesis -->
+            <p class="text-[12px] text-txt-primary leading-relaxed mb-3 md:mb-4">Strait of Hormuz risk drives shipping insurance to record premiums. Container rates surge as tankers re-route. ZIM revenue surges — identical playbook to the 2024 Red Sea crisis.</p>
+
+            <!-- Causal chain -->
+            <div class="mb-3 md:mb-4">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-2">Transmission</span>
+              <div class="flex items-center gap-1.5 causal-chain-row">
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">Iran Escalation</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">Hormuz Threat</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">Insurance +300%</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-up bg-up/[0.06] px-2 md:px-2.5 py-1 rounded border border-up/10">ZIM Revenue ↑</span>
+              </div>
+            </div>
+
+            <!-- Two-column: Edge + R/R -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+              <div>
+                <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-1.5">Priced In</span>
+                <p class="text-[11px] text-txt-tertiary leading-relaxed">General Middle East risk premium, baseline oil disruption fears</p>
+              </div>
+              <div>
+                <span class="text-[9px] font-bold text-up uppercase tracking-widest block mb-1.5">The Edge</span>
+                <p class="text-[11px] text-txt-secondary leading-relaxed">Insurance cost pass-through to shipping rates. Market remembers Red Sea but hasn't positioned yet.</p>
+              </div>
+            </div>
+
+            <!-- Risk/Reward inline -->
+            <div class="flex items-center gap-3 md:gap-4 mb-3 md:mb-4 py-2.5 px-3 bg-surface-1 rounded border border-border">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest">R / R</span>
+              <div class="flex-1 flex h-1.5 rounded-full overflow-hidden bg-surface-3">
+                <div class="bg-up/40 rounded-l-full" style="width:73%"></div>
+                <div class="bg-down/40 rounded-r-full" style="width:27%"></div>
+              </div>
+              <span class="font-mono text-[11px] text-up">+40%</span>
+              <span class="text-[10px] text-txt-tertiary">/</span>
+              <span class="font-mono text-[11px] text-down">−15%</span>
+              <span class="font-mono text-xs font-bold text-txt-primary">2.7 : 1</span>
+            </div>
+
+            <!-- Entry / Invalidation -->
+            <div class="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+              <div>
+                <span class="text-[9px] font-bold text-up uppercase tracking-widest block mb-1">Entry</span>
+                <p class="text-[11px] text-txt-secondary">Any confirmed naval incident near Hormuz</p>
+              </div>
+              <div>
+                <span class="text-[9px] font-bold text-down uppercase tracking-widest block mb-1">Invalidation</span>
+                <p class="text-[11px] text-txt-secondary">Ceasefire or diplomatic resolution within 2 weeks</p>
+              </div>
+            </div>
+
+            <!-- What can break this trade -->
+            <div class="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
+              <span class="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">What Can Break This Trade</span>
+              <ul class="text-[11px] text-txt-secondary leading-relaxed space-y-1">
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Quick diplomatic resolution removes Hormuz threat premium overnight</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Global recession fears override shipping demand — rates collapse even with insurance spike</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>ZIM-specific: new share dilution or poor earnings unrelated to geopolitics</li>
+              </ul>
+            </div>
+
+            <!-- Platforms -->
+            <div class="flex items-center gap-2 pt-3 border-t border-border flex-wrap">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest mr-1">Trade on</span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Robinhood <span class="font-mono text-txt-tertiary">ZIM</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Trading212 <span class="font-mono text-txt-tertiary">ZIM</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TRADE 2: UUP ===== -->
+        <div class="bg-white rounded border border-border overflow-hidden">
+          <div class="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-[9px] font-bold text-white bg-up px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Long</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">UUP</span>
+                <span class="text-[11px] text-txt-tertiary hidden md:inline">Invesco DB US Dollar Index</span>
+                <span class="font-mono text-[11px] text-txt-secondary">$28.15</span>
+                <span class="font-mono text-[11px] text-up font-medium">+0.41%</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">7<span class="text-txt-tertiary font-normal">/10</span></span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold text-blue bg-blue/light px-2 py-0.5 rounded uppercase tracking-wider">2nd Order</span>
+              <span class="text-[9px] font-medium text-tag-currency bg-tag-currency/8 px-2 py-0.5 rounded-full">Currency</span>
+              <span class="text-[10px] text-txt-tertiary font-mono ml-auto">6M horizon</span>
+            </div>
+          </div>
+          <div class="p-4 md:p-5">
+            <p class="text-[12px] text-txt-primary leading-relaxed mb-3 md:mb-4">Oil spike hammers energy-importing nations. India and Japan import bills surge, weakening INR/JPY. Safe-haven demand amplifies USD strength. Dollar bull ETF benefits from twin tailwinds.</p>
+            <div class="mb-3 md:mb-4">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-2">Transmission</span>
+              <div class="flex items-center gap-1.5 causal-chain-row">
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">Oil Spike</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">EM Import Bill ↑</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">INR/JPY Weakens</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-up bg-up/[0.06] px-2 md:px-2.5 py-1 rounded border border-up/10">USD Strengthens</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 md:gap-4 mb-3 md:mb-4 py-2.5 px-3 bg-surface-1 rounded border border-border">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest">R / R</span>
+              <div class="flex-1 flex h-1.5 rounded-full overflow-hidden bg-surface-3">
+                <div class="bg-up/40 rounded-l-full" style="width:67%"></div>
+                <div class="bg-down/40 rounded-r-full" style="width:33%"></div>
+              </div>
+              <span class="font-mono text-[11px] text-up">+12%</span>
+              <span class="text-[10px] text-txt-tertiary">/</span>
+              <span class="font-mono text-[11px] text-down">−6%</span>
+              <span class="font-mono text-xs font-bold text-txt-primary">2.0 : 1</span>
+            </div>
+
+            <!-- What can break this trade -->
+            <div class="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
+              <span class="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">What Can Break This Trade</span>
+              <ul class="text-[11px] text-txt-secondary leading-relaxed space-y-1">
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Fed pivots dovish or cuts rates aggressively — USD weakens regardless of geopolitics</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Oil price drops on surprise OPEC+ output increase, removing EM pressure</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>China stimulus or EM capital inflows reverse safe-haven USD demand</li>
+              </ul>
+            </div>
+
+            <div class="flex items-center gap-2 pt-3 border-t border-border flex-wrap">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest mr-1">Trade on</span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Robinhood <span class="font-mono text-txt-tertiary">UUP</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Trading212 <span class="font-mono text-txt-tertiary">UUP</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Hyperliquid <span class="font-mono text-txt-tertiary">EUR-USD Short · 50x</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TRADE 3: SHORT EEM ===== -->
+        <div class="bg-white rounded border border-border overflow-hidden">
+          <div class="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-[9px] font-bold text-white bg-down px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Short</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">EEM</span>
+                <span class="text-[11px] text-txt-tertiary hidden md:inline">iShares MSCI Emerging Markets</span>
+                <span class="font-mono text-[11px] text-txt-secondary">$39.20</span>
+                <span class="font-mono text-[11px] text-down font-medium">−1.81%</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">7<span class="text-txt-tertiary font-normal">/10</span></span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded uppercase tracking-wider">3rd Order</span>
+              <span class="text-[9px] font-medium text-tag-em bg-tag-em/8 px-2 py-0.5 rounded-full">Emerging Markets</span>
+              <span class="text-[9px] font-medium text-tag-currency bg-tag-currency/8 px-2 py-0.5 rounded-full">Currency</span>
+              <span class="text-[10px] text-txt-tertiary font-mono ml-auto">6M horizon</span>
+            </div>
+          </div>
+          <div class="p-4 md:p-5">
+            <p class="text-[12px] text-txt-primary leading-relaxed mb-3 md:mb-4">The third-order cascade retail misses entirely. Weak EM currencies force central banks to hike rates defensively. Growth stalls. EM equities underperform developed markets for 6+ months.</p>
+            <div class="mb-3 md:mb-4">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-2">Transmission</span>
+              <div class="flex items-center gap-1.5 causal-chain-row">
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">Oil + USD ↑</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">EM FX Pressure</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">Forced Rate Hikes</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">EM Growth Stalls</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 md:gap-4 mb-3 md:mb-4 py-2.5 px-3 bg-surface-1 rounded border border-border">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest">R / R</span>
+              <div class="flex-1 flex h-1.5 rounded-full overflow-hidden bg-surface-3">
+                <div class="bg-up/40 rounded-l-full" style="width:71%"></div>
+                <div class="bg-down/40 rounded-r-full" style="width:29%"></div>
+              </div>
+              <span class="font-mono text-[11px] text-up">+25%</span>
+              <span class="text-[10px] text-txt-tertiary">/</span>
+              <span class="font-mono text-[11px] text-down">−10%</span>
+              <span class="font-mono text-xs font-bold text-txt-primary">2.5 : 1</span>
+            </div>
+
+            <!-- What can break this trade -->
+            <div class="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
+              <span class="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">What Can Break This Trade</span>
+              <ul class="text-[11px] text-txt-secondary leading-relaxed space-y-1">
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>EM central banks intervene with coordinated FX support — currencies stabilize faster than expected</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Rapid de-escalation removes the oil premium entirely, EM import bills normalize</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Global risk-on rally driven by US-China trade deal overshadows Middle East headwinds</li>
+              </ul>
+            </div>
+
+            <div class="flex items-center gap-2 pt-3 border-t border-border flex-wrap">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest mr-1">Trade on</span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Robinhood <span class="font-mono text-txt-tertiary">EEM Puts</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Trading212 <span class="font-mono text-txt-tertiary">EEM CFD Short · 5x</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TRADE 4: DBA ===== -->
+        <div class="bg-white rounded border border-border overflow-hidden">
+          <div class="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-[9px] font-bold text-white bg-up px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Long</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">DBA</span>
+                <span class="text-[11px] text-txt-tertiary hidden md:inline">Invesco DB Agriculture Fund</span>
+                <span class="font-mono text-[11px] text-txt-secondary">$23.10</span>
+                <span class="font-mono text-[11px] text-up font-medium">+1.48%</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
+                <span class="font-mono text-sm font-bold text-txt-primary">6<span class="text-txt-tertiary font-normal">/10</span></span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold text-blue bg-blue/light px-2 py-0.5 rounded uppercase tracking-wider">2nd Order</span>
+              <span class="text-[9px] font-medium text-tag-agriculture bg-tag-agriculture/8 px-2 py-0.5 rounded-full">Agriculture</span>
+              <span class="text-[9px] font-medium text-tag-commodity bg-tag-commodity/8 px-2 py-0.5 rounded-full">Commodities</span>
+              <span class="text-[10px] text-txt-tertiary font-mono ml-auto">2M horizon</span>
+            </div>
+          </div>
+          <div class="p-4 md:p-5">
+            <p class="text-[12px] text-txt-primary leading-relaxed mb-3 md:mb-4">Oil spike cascades into fertilizer costs, driving food prices higher globally. Middle East conflict disrupts wheat supply chains. Agriculture commodities ETF captures the broad food inflation theme.</p>
+            <div class="mb-3 md:mb-4">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-2">Transmission</span>
+              <div class="flex items-center gap-1.5 causal-chain-row">
+                <span class="text-[10px] font-medium text-down bg-down/[0.06] px-2 md:px-2.5 py-1 rounded border border-down/10">Oil Spike</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">Fertilizer Costs ↑</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-amber bg-amber/[0.06] px-2 md:px-2.5 py-1 rounded border border-amber/10">Food Prices ↑</span>
+                <span class="text-txt-tertiary text-[10px]">→</span>
+                <span class="text-[10px] font-medium text-up bg-up/[0.06] px-2 md:px-2.5 py-1 rounded border border-up/10">Ag Commodities ↑</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 md:gap-4 mb-3 md:mb-4 py-2.5 px-3 bg-surface-1 rounded border border-border">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest">R / R</span>
+              <div class="flex-1 flex h-1.5 rounded-full overflow-hidden bg-surface-3">
+                <div class="bg-up/40 rounded-l-full" style="width:65%"></div>
+                <div class="bg-down/40 rounded-r-full" style="width:35%"></div>
+              </div>
+              <span class="font-mono text-[11px] text-up">+20%</span>
+              <span class="text-[10px] text-txt-tertiary">/</span>
+              <span class="font-mono text-[11px] text-down">−11%</span>
+              <span class="font-mono text-xs font-bold text-txt-primary">1.8 : 1</span>
+            </div>
+
+            <!-- What can break this trade -->
+            <div class="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
+              <span class="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">What Can Break This Trade</span>
+              <ul class="text-[11px] text-txt-secondary leading-relaxed space-y-1">
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Record harvests in US/Brazil flood the market — supply glut overrides Middle East disruption</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Natural gas prices fall, lowering fertilizer input costs and capping food inflation</li>
+                <li class="flex gap-1.5"><span class="text-down flex-shrink-0">&#x2022;</span>Strong USD makes dollar-denominated commodities expensive for EM buyers, depressing demand</li>
+              </ul>
+            </div>
+
+            <div class="flex items-center gap-2 pt-3 border-t border-border flex-wrap">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest mr-1">Trade on</span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Robinhood <span class="font-mono text-txt-tertiary">DBA</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Trading212 <span class="font-mono text-txt-tertiary">DBA</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== TRADE 5: WTI Crowded ===== -->
+        <div class="bg-white rounded border border-border overflow-hidden opacity-60">
+          <div class="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2 md:gap-3 min-w-0">
+                <span class="text-[9px] font-bold text-white bg-txt-tertiary px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0">Long</span>
+                <span class="font-mono text-sm font-bold text-txt-secondary">WTI-USD</span>
+                <span class="text-[11px] text-txt-tertiary hidden md:inline">Crude Oil</span>
+                <span class="font-mono text-[11px] text-txt-tertiary">$82.45</span>
+                <span class="font-mono text-[11px] text-up font-medium">+2.31%</span>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
+                <span class="font-mono text-sm font-bold text-txt-tertiary">4<span class="text-txt-tertiary font-normal">/10</span></span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[9px] font-bold text-amber bg-amber/10 px-2 py-0.5 rounded uppercase tracking-wider">Crowded</span>
+              <span class="text-[9px] font-medium text-tag-energy bg-tag-energy/8 px-2 py-0.5 rounded-full">Energy</span>
+              <span class="text-[9px] font-medium text-tag-commodity bg-tag-commodity/8 px-2 py-0.5 rounded-full">Commodities</span>
+              <span class="text-[10px] text-txt-tertiary font-mono ml-auto">2W horizon</span>
+            </div>
+          </div>
+          <div class="p-4 md:p-5">
+            <p class="text-[12px] text-txt-secondary leading-relaxed mb-3 md:mb-4">Direct oil play on Hormuz disruption. <span class="font-medium text-amber">This is the consensus trade — everyone is already long oil.</span> Risk/reward is poor. Only consider with tight stop and small size.</p>
+            <div class="flex items-center gap-2 pt-3 border-t border-border flex-wrap">
+              <span class="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest mr-1">Trade on</span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Hyperliquid <span class="font-mono text-txt-tertiary">WTI-USD · 50x</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Ostrium <span class="font-mono text-txt-tertiary">OIL-PERP · 20x</span></span>
+              <span class="text-[10px] text-txt-secondary px-2 py-1 bg-surface-1 rounded border border-border font-medium">Robinhood <span class="font-mono text-txt-tertiary">USO</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== POLYMARKET ===== -->
+        <div id="poly" class="pt-3 md:pt-4">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xs font-bold text-txt-primary uppercase tracking-wide">Polymarket — Mispriced Predictions</span>
+          </div>
+
+          <!-- Desktop table -->
+          <div class="bg-white rounded border border-border overflow-hidden hidden md:block">
+            <!-- Header -->
+            <div class="grid grid-cols-12 gap-0 px-5 py-2 bg-surface-1 border-b border-border text-[9px] font-bold text-txt-tertiary uppercase tracking-widest">
+              <div class="col-span-5">Market</div>
+              <div class="col-span-1 text-center">Direction</div>
+              <div class="col-span-1 text-center">Market</div>
+              <div class="col-span-1 text-center">AI Est.</div>
+              <div class="col-span-1 text-center">Edge</div>
+              <div class="col-span-1 text-center">Conv.</div>
+              <div class="col-span-2 text-center">Resolves</div>
+            </div>
+
+            <!-- Row 1 -->
+            <div class="grid grid-cols-12 gap-0 px-5 py-3 border-b border-border row-hover items-center">
+              <div class="col-span-5">
+                <p class="text-[12px] text-txt-primary leading-snug">Will the US conduct airstrikes on Iran before July 2026?</p>
+              </div>
+              <div class="col-span-1 text-center">
+                <span class="text-[9px] font-bold text-white bg-up px-1.5 py-0.5 rounded uppercase">Yes</span>
+              </div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-tertiary">35%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-up font-medium">55%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-up font-bold">+20%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-primary font-medium">7/10</div>
+              <div class="col-span-2 text-center text-[11px] text-txt-tertiary">4 months</div>
+            </div>
+
+            <!-- Row 2 -->
+            <div class="grid grid-cols-12 gap-0 px-5 py-3 border-b border-border row-hover items-center">
+              <div class="col-span-5">
+                <p class="text-[12px] text-txt-primary leading-snug">Will oil prices exceed $100/barrel before September 2026?</p>
+              </div>
+              <div class="col-span-1 text-center">
+                <span class="text-[9px] font-bold text-white bg-up px-1.5 py-0.5 rounded uppercase">Yes</span>
+              </div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-tertiary">28%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-up font-medium">43%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-up font-bold">+15%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-primary font-medium">6/10</div>
+              <div class="col-span-2 text-center text-[11px] text-txt-tertiary">6 months</div>
+            </div>
+
+            <!-- Row 3 -->
+            <div class="grid grid-cols-12 gap-0 px-5 py-3 row-hover items-center">
+              <div class="col-span-5">
+                <p class="text-[12px] text-txt-primary leading-snug">Will Iran and the US reach a diplomatic agreement in 2026?</p>
+              </div>
+              <div class="col-span-1 text-center">
+                <span class="text-[9px] font-bold text-white bg-down px-1.5 py-0.5 rounded uppercase">No</span>
+              </div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-tertiary">42%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-down font-medium">17%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-up font-bold">+25%</div>
+              <div class="col-span-1 text-center font-mono text-[12px] text-txt-primary font-medium">8/10</div>
+              <div class="col-span-2 text-center text-[11px] text-txt-tertiary">9 months</div>
+            </div>
+          </div>
+
+          <!-- Mobile Polymarket cards -->
+          <div class="md:hidden space-y-2">
+            <!-- Card 1 -->
+            <div class="bg-white rounded border border-border p-3">
+              <p class="text-[12px] text-txt-primary leading-snug mb-2">Will the US conduct airstrikes on Iran before July 2026?</p>
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold text-white bg-up px-1.5 py-0.5 rounded uppercase">Buy Yes</span>
+                <div class="flex items-center gap-3">
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Market</div>
+                    <div class="font-mono text-[12px] text-txt-tertiary">35%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">AI Est.</div>
+                    <div class="font-mono text-[12px] text-up font-medium">55%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Edge</div>
+                    <div class="font-mono text-[12px] text-up font-bold">+20%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Conv.</div>
+                    <div class="font-mono text-[12px] text-txt-primary font-medium">7/10</div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-[10px] text-txt-tertiary mt-1.5">Resolves in 4 months</div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white rounded border border-border p-3">
+              <p class="text-[12px] text-txt-primary leading-snug mb-2">Will oil prices exceed $100/barrel before September 2026?</p>
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold text-white bg-up px-1.5 py-0.5 rounded uppercase">Buy Yes</span>
+                <div class="flex items-center gap-3">
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Market</div>
+                    <div class="font-mono text-[12px] text-txt-tertiary">28%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">AI Est.</div>
+                    <div class="font-mono text-[12px] text-up font-medium">43%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Edge</div>
+                    <div class="font-mono text-[12px] text-up font-bold">+15%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Conv.</div>
+                    <div class="font-mono text-[12px] text-txt-primary font-medium">6/10</div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-[10px] text-txt-tertiary mt-1.5">Resolves in 6 months</div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white rounded border border-border p-3">
+              <p class="text-[12px] text-txt-primary leading-snug mb-2">Will Iran and the US reach a diplomatic agreement in 2026?</p>
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] font-bold text-white bg-down px-1.5 py-0.5 rounded uppercase">Buy No</span>
+                <div class="flex items-center gap-3">
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Market</div>
+                    <div class="font-mono text-[12px] text-txt-tertiary">42%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">AI Est.</div>
+                    <div class="font-mono text-[12px] text-down font-medium">17%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Edge</div>
+                    <div class="font-mono text-[12px] text-up font-bold">+25%</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-[8px] text-txt-tertiary uppercase">Conv.</div>
+                    <div class="font-mono text-[12px] text-txt-primary font-medium">8/10</div>
+                  </div>
+                </div>
+              </div>
+              <div class="text-[10px] text-txt-tertiary mt-1.5">Resolves in 9 months</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="mt-6 mb-4 px-1">
+          <p class="text-[9px] text-txt-tertiary leading-relaxed">This tool is for informational and educational purposes only and does not constitute investment advice, financial advice, trading advice, or any other sort of advice. You should not treat any of the content as such. The creators of this tool do not recommend that any securities, cryptocurrencies, or prediction market positions be bought, sold, or held by you. Do your own due diligence and consult your financial advisor before making any investment decisions. Use of this tool is at your own risk. Past performance is not indicative of future results.</p>
+        </div>
+
+        <div class="h-6"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== MOBILE BOTTOM NAV ===== -->
+  <div class="mobile-nav fixed bottom-0 left-0 right-0 bg-white border-t border-border z-50 items-center justify-around py-2 px-4 safe-area-bottom" style="display:none; padding-bottom: max(8px, env(safe-area-inset-bottom));">
+    <button class="mobile-tab flex flex-col items-center gap-0.5 flex-1 py-1 text-txt-tertiary" onclick="switchTab('feed')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6V7.5Z"/></svg>
+      <span class="text-[10px] font-semibold">Feed</span>
+      <div class="tab-dot w-1 h-1 rounded-full mt-0.5"></div>
+    </button>
+    <button class="mobile-tab active flex flex-col items-center gap-0.5 flex-1 py-1" onclick="switchTab('trades')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></svg>
+      <span class="text-[10px] font-semibold">Trades</span>
+      <div class="tab-dot w-1 h-1 rounded-full mt-0.5"></div>
+    </button>
+    <button class="mobile-tab flex flex-col items-center gap-0.5 flex-1 py-1 text-txt-tertiary" onclick="switchTab('polymarket')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+      <span class="text-[10px] font-semibold">Predict</span>
+      <div class="tab-dot w-1 h-1 rounded-full mt-0.5"></div>
+    </button>
+    <button class="mobile-tab flex flex-col items-center gap-0.5 flex-1 py-1 text-txt-tertiary" onclick="switchTab('history')">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+      <span class="text-[10px] font-semibold">History</span>
+      <div class="tab-dot w-1 h-1 rounded-full mt-0.5"></div>
+    </button>
+  </div>
+
+  <script>
+    function switchTab(tab) {
+      // Hide all panels
+      document.querySelectorAll('.mobile-panel').forEach(p => p.classList.remove('active'));
+
+      // Deactivate all tabs
+      document.querySelectorAll('.mobile-tab').forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('text-txt-tertiary');
+      });
+
+      // Show the selected panel
+      if (tab === 'feed') {
+        document.getElementById('panel-feed').classList.add('active');
+        document.querySelectorAll('.mobile-tab')[0].classList.add('active');
+        document.querySelectorAll('.mobile-tab')[0].classList.remove('text-txt-tertiary');
+      } else if (tab === 'trades') {
+        document.getElementById('panel-trades').classList.add('active');
+        document.querySelectorAll('.mobile-tab')[1].classList.add('active');
+        document.querySelectorAll('.mobile-tab')[1].classList.remove('text-txt-tertiary');
+      } else if (tab === 'polymarket') {
+        // Show trades panel but scroll to polymarket section
+        document.getElementById('panel-trades').classList.add('active');
+        document.querySelectorAll('.mobile-tab')[2].classList.add('active');
+        document.querySelectorAll('.mobile-tab')[2].classList.remove('text-txt-tertiary');
+        setTimeout(() => {
+          document.getElementById('poly').scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else if (tab === 'history') {
+        // placeholder
+        document.getElementById('panel-trades').classList.add('active');
+        document.querySelectorAll('.mobile-tab')[3].classList.add('active');
+        document.querySelectorAll('.mobile-tab')[3].classList.remove('text-txt-tertiary');
+      }
+    }
+  </script>
+
+</body>
+</html>
