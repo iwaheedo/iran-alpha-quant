@@ -103,13 +103,23 @@ OUTPUT FORMAT — Return a JSON object with this exact structure:
   ]
 }
 
+CRITICAL — NEWS-DRIVEN TRADE GENERATION:
+- Your trade ideas MUST be directly driven by the news feed provided. The news feed is your PRIMARY SIGNAL.
+- For EVERY trade, you must cite which specific news headline(s) triggered the idea. Reference the news item by its title or ID.
+- If a news headline says "Iran seizes tanker in Strait of Hormuz" — your trades should REACT to that specific event, not generic "Middle East tensions."
+- The thesis should explicitly state: "Following [specific news event], we expect [specific market reaction] because [quantified reasoning]."
+- DO NOT generate generic geopolitical trades disconnected from the current news. Every trade must trace back to a specific news signal.
+- If the news feed shows de-escalation signals, your trades should reflect that — don't always assume escalation.
+- Prioritize the HIGHEST-PRIORITY and MOST RECENT news items. A CRITICAL headline from 1 hour ago matters more than a LOW headline from yesterday.
+- newsIds field is MANDATORY — every trade must link to at least 1 news item ID that supports it.
+
 IMPORTANT:
 - Generate 4-8 trade ideas, diversified across categories and time horizons.
 - At least 2 trades MUST be 2ND_ORDER or 3RD_ORDER — this is where the alpha is.
 - At least 1 trade should be flagged as CROWDED if applicable.
 - Include a mix of time horizons.
 - Use CURRENT prices from the price data provided.
-- Link trades to specific news items via newsIds.
+- Link trades to specific news items via newsIds — this is NOT optional.
 - Every field must meet the quality bar above. Vague or generic output is unacceptable.`;
 
 export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): string {
@@ -137,7 +147,15 @@ ${JSON.stringify(newsJson, null, 2)}
 CURRENT MARKET PRICES:
 ${JSON.stringify(pricesJson, null, 2)}
 
-Based on the above news and prices, generate structured trade ideas focusing on second and third-order effects. Return valid JSON only — no markdown, no code fences.`;
+INSTRUCTIONS:
+1. Read EVERY news item above carefully. These are your PRIMARY trading signals.
+2. For each trade idea, you MUST cite which specific news headline(s) triggered it — reference the news by ID in the newsIds field.
+3. Your thesis should start with "Following [specific news event]..." or directly reference the news catalyst.
+4. React to what the news is ACTUALLY saying — if it signals de-escalation, trade accordingly. If it signals escalation, trade that.
+5. Focus on second and third-order effects that the market hasn't priced yet.
+6. Use the CURRENT MARKET PRICES above for entry levels and invalidation points.
+
+Return valid JSON only — no markdown, no code fences.`;
 }
 
 export const POLYMARKET_SYSTEM_PROMPT = `You are a probability estimation expert specializing in geopolitical events. You will be given Polymarket prediction market questions along with current news context.

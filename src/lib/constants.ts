@@ -5,8 +5,8 @@ import type { Category, TimeHorizon } from '@/types';
 export const TRACKED_SYMBOLS: { symbol: string; label: string; finnhubSymbol?: string; yahooSymbol?: string }[] = [
   { symbol: 'WTI', label: 'WTI', finnhubSymbol: 'CL', yahooSymbol: 'CL=F' },
   { symbol: 'BRENT', label: 'BRENT', finnhubSymbol: 'BZ', yahooSymbol: 'BZ=F' },
-  { symbol: 'GOLD', label: 'GOLD', finnhubSymbol: 'GC', yahooSymbol: 'GC=F' },
-  { symbol: 'DXY', label: 'DXY', yahooSymbol: 'DX-Y.NYB' },
+  { symbol: 'GLD', label: 'GOLD', finnhubSymbol: 'GLD', yahooSymbol: 'GLD' },
+  { symbol: 'UUP', label: 'USD', finnhubSymbol: 'UUP', yahooSymbol: 'UUP' },
   { symbol: 'ZIM', label: 'ZIM', finnhubSymbol: 'ZIM', yahooSymbol: 'ZIM' },
   { symbol: 'ITA', label: 'ITA', finnhubSymbol: 'ITA', yahooSymbol: 'ITA' },
   { symbol: 'EEM', label: 'EEM', finnhubSymbol: 'EEM', yahooSymbol: 'EEM' },

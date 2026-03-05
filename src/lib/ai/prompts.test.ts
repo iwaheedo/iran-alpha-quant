@@ -61,6 +61,12 @@ describe('TRADE_SYSTEM_PROMPT', () => {
     expect(TRADE_SYSTEM_PROMPT).toContain('Druckenmiller');
     expect(TRADE_SYSTEM_PROMPT).toContain('asymmetric');
   });
+
+  it('requires news-driven trade generation', () => {
+    expect(TRADE_SYSTEM_PROMPT).toContain('NEWS-DRIVEN');
+    expect(TRADE_SYSTEM_PROMPT).toContain('PRIMARY SIGNAL');
+    expect(TRADE_SYSTEM_PROMPT).toContain('newsIds');
+  });
 });
 
 describe('SINGLE_NEWS_SYSTEM_PROMPT', () => {
