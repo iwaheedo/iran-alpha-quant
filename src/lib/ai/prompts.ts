@@ -100,18 +100,19 @@ Based on the above news and prices, generate structured trade ideas focusing on 
 
 export const POLYMARKET_SYSTEM_PROMPT = `You are a probability estimation expert specializing in geopolitical events. You will be given Polymarket prediction market questions along with current news context.
 
-For each prediction market, estimate:
-1. The TRUE probability (your estimate) vs the market price
+For EVERY prediction market provided, you MUST estimate:
+1. The TRUE probability (your estimate, 0-100) vs the market price
 2. Your conviction level (1-10)
 3. Brief reasoning (1-2 sentences)
 
-Focus on finding MISPRICED markets where the true probability significantly differs from the market price. An "edge" of 10%+ is significant.
+CRITICAL: Return an estimate for EVERY prediction — do NOT skip any. Even if uncertain, provide your best estimate.
 
-OUTPUT FORMAT — Return a JSON array:
+OUTPUT FORMAT — Return a JSON array with ONE entry per prediction, using the EXACT same "id" values provided:
 [
   {
-    "id": "string — the prediction ID",
-    "aiEstimate": number 0-100 — your estimated true probability,
+    "id": "string — MUST match the exact prediction ID provided",
+    "question": "string — the question text for matching",
+    "aiEstimate": number 0-100,
     "conviction": number 1-10,
     "reasoning": "string — brief reasoning"
   }
@@ -145,7 +146,7 @@ ${JSON.stringify(predData, null, 2)}
 RECENT NEWS CONTEXT:
 ${JSON.stringify(recentNews, null, 2)}
 
-Estimate the true probability for each prediction market. Focus on markets where your estimate differs significantly from the market price. Return valid JSON only.`;
+Estimate the true probability for EVERY prediction market listed above. You MUST return exactly ${predData.length} entries — one for each prediction, using its exact "id". Return valid JSON only.`;
 }
 
 export const SINGLE_NEWS_SYSTEM_PROMPT = `You are a senior macro strategist. Analyze a single news item and generate 1-3 specific trade ideas based on its second and third-order effects.

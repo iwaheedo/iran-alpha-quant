@@ -231,15 +231,34 @@ export function validatePolymarketEnrichment(
 ): PolymarketPrediction[] {
   if (!Array.isArray(enrichments)) return existing;
 
-  const enrichMap = new Map<string, Record<string, unknown>>();
-  for (const e of enrichments) {
-    if (typeof e === 'object' && e !== null && typeof (e as Record<string, unknown>).id === 'string') {
-      enrichMap.set((e as Record<string, unknown>).id as string, e as Record<string, unknown>);
+  // Build lookup maps — by ID and by question text (normalized)
+  const enrichById = new Map<string, Record<string, unknown>>();
+  const enrichByQuestion = new Map<string, Record<string, unknown>>();
+  const enrichByIndex = new Map<number, Record<string, unknown>>();
+
+  for (let i = 0; i < enrichments.length; i++) {
+    const e = enrichments[i];
+    if (typeof e !== 'object' || e === null) continue;
+    const rec = e as Record<string, unknown>;
+
+    if (typeof rec.id === 'string') {
+      enrichById.set(rec.id, rec);
     }
+    if (typeof rec.question === 'string') {
+      enrichByQuestion.set(rec.question.toLowerCase().trim(), rec);
+    }
+    enrichByIndex.set(i, rec);
   }
 
-  return existing.map(pred => {
-    const enrichment = enrichMap.get(pred.id);
+  return existing.map((pred, idx) => {
+    // Try matching: by ID first, then by question text, then by index position
+    let enrichment = enrichById.get(pred.id);
+    if (!enrichment) {
+      enrichment = enrichByQuestion.get(pred.question.toLowerCase().trim());
+    }
+    if (!enrichment && enrichByIndex.has(idx)) {
+      enrichment = enrichByIndex.get(idx);
+    }
     if (!enrichment) return pred;
 
     const aiEstimate = typeof enrichment.aiEstimate === 'number'

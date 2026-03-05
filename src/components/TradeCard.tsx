@@ -35,35 +35,25 @@ function orderTypeLabel(orderType: TradeIdea['orderType']) {
 
 export default function TradeCard({ trade }: TradeCardProps) {
   const isLong = trade.direction === 'LONG';
-  const isCrowded = trade.isCrowded || trade.orderType === 'CROWDED';
   const priceUp = trade.priceChange >= 0;
 
   return (
-    <div className={cn(
-      'bg-white rounded border border-border overflow-hidden',
-      isCrowded && 'opacity-60'
-    )}>
+    <div className="bg-white rounded border border-border overflow-hidden">
       {/* Header */}
       <div className="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
         <div className="flex items-center justify-between mb-1.5">
           <div className="flex items-center gap-2 md:gap-3 min-w-0">
             <span className={cn(
               'text-[9px] font-bold text-white px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0',
-              isCrowded ? 'bg-txt-tertiary' : (isLong ? 'bg-up' : 'bg-down')
+              isLong ? 'bg-up' : 'bg-down'
             )}>
               {trade.direction}
             </span>
-            <span className={cn(
-              'font-mono text-sm font-bold',
-              isCrowded ? 'text-txt-secondary' : 'text-txt-primary'
-            )}>
+            <span className="font-mono text-sm font-bold text-txt-primary">
               {trade.ticker}
             </span>
             <span className="text-[11px] text-txt-tertiary hidden md:inline">{trade.fullName}</span>
-            <span className={cn(
-              'font-mono text-[11px]',
-              isCrowded ? 'text-txt-tertiary' : 'text-txt-secondary'
-            )}>
+            <span className="font-mono text-[11px] text-txt-secondary">
               ${formatPrice(trade.currentPrice)}
             </span>
             <span className={cn(
@@ -75,10 +65,7 @@ export default function TradeCard({ trade }: TradeCardProps) {
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-[10px] text-txt-secondary hidden md:inline">Conviction</span>
-            <span className={cn(
-              'font-mono text-sm font-bold',
-              isCrowded ? 'text-txt-tertiary' : 'text-txt-primary'
-            )}>
+            <span className="font-mono text-sm font-bold text-txt-primary">
               {trade.conviction}<span className="text-txt-tertiary font-normal">/10</span>
             </span>
           </div>
@@ -112,75 +99,62 @@ export default function TradeCard({ trade }: TradeCardProps) {
       {/* Body */}
       <div className="p-4 md:p-5">
         {/* Thesis */}
-        <p className={cn(
-          'text-[12px] leading-relaxed mb-3 md:mb-4',
-          isCrowded ? 'text-txt-secondary' : 'text-txt-primary'
-        )}>
+        <p className="text-[12px] leading-relaxed mb-3 md:mb-4 text-txt-primary">
           {trade.thesis}
-          {isCrowded && (
-            <span className="font-medium text-amber">
-              {' '}This is the consensus trade — everyone is already positioned here.
-            </span>
-          )}
         </p>
 
-        {/* Only show full details for non-crowded trades */}
-        {!isCrowded && (
-          <>
-            {/* Causal Chain */}
-            <CausalChain steps={trade.causalChain} />
+        {/* Causal Chain */}
+        <CausalChain steps={trade.causalChain} />
 
-            {/* Priced In / Edge */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
-              <div>
-                <span className="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-1.5">
-                  Priced In
-                </span>
-                <p className="text-[11px] text-txt-tertiary leading-relaxed">{trade.pricedIn}</p>
-              </div>
-              <div>
-                <span className="text-[9px] font-bold text-up uppercase tracking-widest block mb-1.5">
-                  The Edge
-                </span>
-                <p className="text-[11px] text-txt-secondary leading-relaxed">{trade.edge}</p>
-              </div>
-            </div>
+        {/* Priced In / Edge */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+          <div>
+            <span className="text-[9px] font-bold text-txt-tertiary uppercase tracking-widest block mb-1.5">
+              Priced In
+            </span>
+            <p className="text-[11px] text-txt-tertiary leading-relaxed">{trade.pricedIn}</p>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold text-up uppercase tracking-widest block mb-1.5">
+              The Edge
+            </span>
+            <p className="text-[11px] text-txt-secondary leading-relaxed">{trade.edge}</p>
+          </div>
+        </div>
 
-            {/* Risk/Reward */}
-            <RiskRewardBar
-              upside={trade.riskReward.upside}
-              downside={trade.riskReward.downside}
-              ratio={trade.riskReward.ratio}
-            />
+        {/* Risk/Reward */}
+        <RiskRewardBar
+          upside={trade.riskReward.upside}
+          downside={trade.riskReward.downside}
+          ratio={trade.riskReward.ratio}
+        />
 
-            {/* Entry / Invalidation */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
-              <div>
-                <span className="text-[9px] font-bold text-up uppercase tracking-widest block mb-1">Entry</span>
-                <p className="text-[11px] text-txt-secondary">{trade.entry}</p>
-              </div>
-              <div>
-                <span className="text-[9px] font-bold text-down uppercase tracking-widest block mb-1">Invalidation</span>
-                <p className="text-[11px] text-txt-secondary">{trade.invalidation}</p>
-              </div>
-            </div>
+        {/* Entry / Invalidation */}
+        <div className="grid grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+          <div>
+            <span className="text-[9px] font-bold text-up uppercase tracking-widest block mb-1">Entry</span>
+            <p className="text-[11px] text-txt-secondary">{trade.entry}</p>
+          </div>
+          <div>
+            <span className="text-[9px] font-bold text-down uppercase tracking-widest block mb-1">Invalidation</span>
+            <p className="text-[11px] text-txt-secondary">{trade.invalidation}</p>
+          </div>
+        </div>
 
-            {/* Breakers */}
-            <div className="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
-              <span className="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">
-                What Can Break This Trade
-              </span>
-              <ul className="text-[11px] text-txt-secondary leading-relaxed space-y-1">
-                {trade.breakers.map((breaker, i) => (
-                  <li key={i} className="flex gap-1.5">
-                    <span className="text-down flex-shrink-0">&#x2022;</span>
-                    {breaker}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </>
-        )}
+        {/* Breakers */}
+        <div className="mb-3 md:mb-4 p-3 bg-down/[0.03] rounded border border-down/10">
+          <span className="text-[9px] font-bold text-down uppercase tracking-widest block mb-1.5">
+            What Can Break This Trade
+          </span>
+          <ul className="text-[11px] text-txt-secondary leading-relaxed space-y-1">
+            {trade.breakers.map((breaker, i) => (
+              <li key={i} className="flex gap-1.5">
+                <span className="text-down flex-shrink-0">&#x2022;</span>
+                {breaker}
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {/* Platforms */}
         <PlatformBadges platforms={trade.platforms} />
