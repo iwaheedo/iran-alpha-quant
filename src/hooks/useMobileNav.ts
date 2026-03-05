@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 
-export type MobileTab = 'feed' | 'trades' | 'predict' | 'history';
+export type MobileTab = 'feed' | 'trades' | 'predict';
 
 export function useMobileNav() {
   const [activeTab, setActiveTab] = useState<MobileTab>('trades');

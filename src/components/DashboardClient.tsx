@@ -66,7 +66,7 @@ export default function DashboardClient() {
         <div
           className={cn(
             'right-panel flex-1 overflow-y-auto bg-surface-1 mobile-panel flex-col',
-            (activeTab === 'trades' || activeTab === 'predict' || activeTab === 'history') && 'active'
+            (activeTab === 'trades' || activeTab === 'predict') && 'active'
           )}
           style={{ height: 'calc(100vh - 76px - 56px)' }}
         >
@@ -85,6 +85,7 @@ export default function DashboardClient() {
               onSwitchToFeed={() => switchTab('feed')}
               isLoading={isAnalyzing}
               hasError={analysisError}
+              activeTab={activeTab}
             />
           </ErrorBoundary>
         </div>

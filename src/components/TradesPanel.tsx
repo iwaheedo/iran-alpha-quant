@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import type { TradeIdea, NewsItem, MacroRegime, PolymarketPrediction, Category, TimeHorizon } from '@/types';
 import type { SortOption } from '@/hooks/useFilters';
+import type { MobileTab } from '@/hooks/useMobileNav';
 import FilterBar from './FilterBar';
 import BreakingIntel from './BreakingIntel';
 import MacroRegimeBox from './MacroRegimeBox';
@@ -24,6 +25,7 @@ interface TradesPanelProps {
   onSwitchToFeed: () => void;
   isLoading?: boolean;
   hasError?: boolean;
+  activeTab?: MobileTab;
 }
 
 export default function TradesPanel({
@@ -40,12 +42,24 @@ export default function TradesPanel({
   onSwitchToFeed,
   isLoading,
   hasError,
+  activeTab,
 }: TradesPanelProps) {
   const polyRef = useRef<HTMLDivElement>(null);
 
   const scrollToPolymarket = useCallback(() => {
     polyRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  // Auto-scroll to Polymarket when "Predict" tab is tapped on mobile
+  useEffect(() => {
+    if (activeTab === 'predict') {
+      // Small delay to ensure the panel is visible before scrolling
+      const timer = setTimeout(() => {
+        polyRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
 
   return (
     <>
