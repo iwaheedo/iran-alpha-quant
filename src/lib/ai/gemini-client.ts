@@ -14,10 +14,9 @@ function getClient(): GoogleGenerativeAI {
   return genAI;
 }
 
-async function callWithRetry(
+export async function geminiGenerate(
   systemPrompt: string,
-  userPrompt: string,
-  maxRetries = 2
+  userPrompt: string
 ): Promise<string> {
   const client = getClient();
   const model = client.getGenerativeModel({
@@ -29,60 +28,27 @@ async function callWithRetry(
     },
   });
 
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const result = await model.generateContent({
-        systemInstruction: systemPrompt,
-        contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-      });
-
-      const response = result.response;
-      const text = response.text();
-
-      if (!text || text.trim().length === 0) {
-        throw new Error('Empty response from Gemini');
-      }
-
-      return text;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-
-      // Rate limit — exponential backoff
-      if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED')) {
-        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s
-        console.warn(`[Gemini] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      // Other errors — retry with backoff
-      if (attempt < maxRetries - 1) {
-        const delay = Math.pow(2, attempt) * 1000;
-        console.warn(`[Gemini] Error: ${message}, retrying in ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      throw err;
-    }
-  }
-
-  throw new Error('Gemini: max retries exceeded');
-}
-
-export async function geminiGenerate(
-  systemPrompt: string,
-  userPrompt: string
-): Promise<string> {
   console.log('[Gemini] Sending request...');
   const startTime = Date.now();
 
-  const result = await callWithRetry(systemPrompt, userPrompt);
+  // Single attempt — no retries. The CDN will retry on the next cache cycle.
+  // Retries within the function risk exceeding the 60s serverless timeout.
+  const result = await model.generateContent({
+    systemInstruction: systemPrompt,
+    contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+  });
+
+  const response = result.response;
+  const text = response.text();
+
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty response from Gemini');
+  }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`[Gemini] Response received in ${elapsed}s (${result.length} chars)`);
+  console.log(`[Gemini] Response received in ${elapsed}s (${text.length} chars)`);
 
-  return result;
+  return text;
 }
 
 export function isGeminiConfigured(): boolean {

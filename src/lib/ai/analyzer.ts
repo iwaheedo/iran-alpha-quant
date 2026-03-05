@@ -56,7 +56,7 @@ async function callAI(systemPrompt: string, userPrompt: string): Promise<string>
 
 export async function runFullAnalysis(): Promise<AnalysisResponse> {
   const runId = generateRunId();
-  createAnalysisRun(runId);
+  try { createAnalysisRun(runId); } catch { /* DB write may fail on serverless — non-critical */ }
   console.log(`[Analyzer] Starting full analysis (${runId})...`);
 
   // Step 1: Fetch fresh data in parallel (this should always succeed)

@@ -14,71 +14,37 @@ function getClient(): Groq {
   return client;
 }
 
-async function callWithRetry(
-  systemPrompt: string,
-  userPrompt: string,
-  maxRetries = 2
-): Promise<string> {
-  const groq = getClient();
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 8192,
-        response_format: { type: 'json_object' },
-      });
-
-      const text = completion.choices[0]?.message?.content;
-
-      if (!text || text.trim().length === 0) {
-        throw new Error('Empty response from Groq');
-      }
-
-      return text;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-
-      // Rate limit
-      if (message.includes('429') || message.includes('rate_limit')) {
-        const delay = Math.pow(2, attempt + 1) * 1000; // 2s, 4s
-        console.warn(`[Groq] Rate limited, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      if (attempt < maxRetries - 1) {
-        const delay = Math.pow(2, attempt) * 1000;
-        console.warn(`[Groq] Error: ${message}, retrying in ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
-      }
-
-      throw err;
-    }
-  }
-
-  throw new Error('Groq: max retries exceeded');
-}
-
 export async function groqGenerate(
   systemPrompt: string,
   userPrompt: string
 ): Promise<string> {
+  const groq = getClient();
+
   console.log('[Groq] Sending request (fallback)...');
   const startTime = Date.now();
 
-  const result = await callWithRetry(systemPrompt, userPrompt);
+  // Single attempt — no retries. The CDN will retry on the next cache cycle.
+  const completion = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
+    temperature: 0.7,
+    max_tokens: 8192,
+    response_format: { type: 'json_object' },
+  });
+
+  const text = completion.choices[0]?.message?.content;
+
+  if (!text || text.trim().length === 0) {
+    throw new Error('Empty response from Groq');
+  }
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`[Groq] Response received in ${elapsed}s (${result.length} chars)`);
+  console.log(`[Groq] Response received in ${elapsed}s (${text.length} chars)`);
 
-  return result;
+  return text;
 }
 
 export function isGroqConfigured(): boolean {
