@@ -95,7 +95,7 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
       </div>
 
       {/* Mobile tagline — shown below the header row on small screens */}
-      <div className="md:hidden mt-1 text-[9px] text-txt-tertiary tracking-wide">
+      <div className="md:hidden mt-1.5 text-[11px] text-txt-secondary font-medium">
         {tagline}
       </div>
     </header>
