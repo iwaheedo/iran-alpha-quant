@@ -1,4 +1,5 @@
 import { fetchAllNews, fetchAllPrices, fetchPolymarket } from '@/lib/fetchers';
+import { cerebrasGenerate, isCerebrasConfigured } from './cerebras-client';
 import { geminiGenerate, isGeminiConfigured } from './gemini-client';
 import { groqGenerate, isGroqConfigured } from './groq-client';
 import {
@@ -31,26 +32,35 @@ function generateRunId(): string {
 }
 
 async function callAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  // Groq primary (faster, generous free tier: 14,400 RPD)
-  // Gemini fallback (rate-limited on free tier)
-  if (isGroqConfigured()) {
+  // Cerebras primary (1M tokens/day free, fastest inference)
+  // Groq fallback (100K tokens/day free)
+  // Gemini last resort (rate-limited on free tier)
+  const providers: { name: string; configured: boolean; generate: () => Promise<string> }[] = [
+    { name: 'Cerebras', configured: isCerebrasConfigured(), generate: () => cerebrasGenerate(systemPrompt, userPrompt) },
+    { name: 'Groq', configured: isGroqConfigured(), generate: () => groqGenerate(systemPrompt, userPrompt) },
+    { name: 'Gemini', configured: isGeminiConfigured(), generate: () => geminiGenerate(systemPrompt, userPrompt) },
+  ];
+
+  const available = providers.filter(p => p.configured);
+  if (available.length === 0) {
+    throw new Error('No AI provider configured. Set CEREBRAS_API_KEY, GROQ_API_KEY, or GEMINI_API_KEY');
+  }
+
+  let lastError: Error | null = null;
+  for (const provider of available) {
     try {
-      return await groqGenerate(systemPrompt, userPrompt);
+      return await provider.generate();
     } catch (err) {
-      console.error('[Analyzer] Groq failed:', err instanceof Error ? err.message : err);
-      if (isGeminiConfigured()) {
-        console.log('[Analyzer] Falling back to Gemini...');
-        return await geminiGenerate(systemPrompt, userPrompt);
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.error(`[Analyzer] ${provider.name} failed:`, lastError.message);
+      if (available.indexOf(provider) < available.length - 1) {
+        const next = available[available.indexOf(provider) + 1];
+        console.log(`[Analyzer] Falling back to ${next.name}...`);
       }
-      throw err;
     }
   }
 
-  if (isGeminiConfigured()) {
-    return await geminiGenerate(systemPrompt, userPrompt);
-  }
-
-  throw new Error('No AI provider configured. Set GEMINI_API_KEY or GROQ_API_KEY in .env.local');
+  throw lastError || new Error('All AI providers failed');
 }
 
 // ===== Full Analysis =====
