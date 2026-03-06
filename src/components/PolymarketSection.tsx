@@ -49,13 +49,8 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
           const edgePositive = pred.edge > 0;
           const isLast = i === predictions.length - 1;
 
-          return (
-            <div
-              key={pred.id}
-              className={`grid grid-cols-12 gap-0 px-5 py-3 row-hover items-center ${
-                !isLast ? 'border-b border-border' : ''
-              }`}
-            >
+          const content = (
+            <>
               <div className="col-span-5">
                 <p className="text-[12px] text-txt-primary leading-snug">{pred.question}</p>
                 {pred.reasoning && (
@@ -88,6 +83,30 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
               <div className="col-span-2 text-center text-[11px] text-txt-tertiary">
                 {pred.resolvesIn}
               </div>
+            </>
+          );
+
+          const rowClass = `grid grid-cols-12 gap-0 px-5 py-3 items-center ${
+            !isLast ? 'border-b border-border' : ''
+          }`;
+
+          if (pred.url) {
+            return (
+              <a
+                key={pred.id}
+                href={pred.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${rowClass} cursor-pointer hover:bg-surface-1 transition-colors no-underline`}
+              >
+                {content}
+              </a>
+            );
+          }
+
+          return (
+            <div key={pred.id} className={rowClass}>
+              {content}
             </div>
           );
         })}
@@ -99,8 +118,8 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
           const isYes = pred.direction === 'YES';
           const edgePositive = pred.edge > 0;
 
-          return (
-            <div key={pred.id} className="bg-white rounded border border-border p-3">
+          const content = (
+            <>
               <p className="text-[12px] text-txt-primary leading-snug mb-1">{pred.question}</p>
               {pred.reasoning && (
                 <p className="text-[10px] text-txt-tertiary leading-snug mb-2">{pred.reasoning}</p>
@@ -141,6 +160,26 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
                 </div>
               </div>
               <div className="text-[10px] text-txt-tertiary mt-1.5">Resolves in {pred.resolvesIn}</div>
+            </>
+          );
+
+          if (pred.url) {
+            return (
+              <a
+                key={pred.id}
+                href={pred.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white rounded border border-border p-3 block cursor-pointer hover:bg-surface-1 transition-colors no-underline"
+              >
+                {content}
+              </a>
+            );
+          }
+
+          return (
+            <div key={pred.id} className="bg-white rounded border border-border p-3">
+              {content}
             </div>
           );
         })}

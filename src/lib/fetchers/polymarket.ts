@@ -119,6 +119,7 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
         conviction: 0,
         resolvesIn: market.endDate ? getResolvesIn(market.endDate) : 'Unknown',
         conditionId: market.conditionId,
+        url: market.slug ? `https://polymarket.com/event/${market.slug}` : undefined,
       });
     }
 

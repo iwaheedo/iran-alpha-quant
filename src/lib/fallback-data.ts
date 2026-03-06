@@ -327,6 +327,7 @@ export const FALLBACK_PREDICTIONS: PolymarketPrediction[] = [
     conviction: 6,
     resolvesIn: '9 months',
     reasoning: 'Market underpricing escalation risk. Current military posture (2 carrier groups + B-2 deployments) mirrors pre-strike configurations historically. Once assets are in theater, strike probability rises significantly.',
+    url: 'https://polymarket.com/event/us-iran-military-strike-2026',
   },
   {
     id: 'pm_fb_hormuz',
@@ -338,6 +339,7 @@ export const FALLBACK_PREDICTIONS: PolymarketPrediction[] = [
     conviction: 7,
     resolvesIn: '9 months',
     reasoning: 'Iran has repeatedly demonstrated willingness to disrupt Hormuz traffic. Current escalation trajectory and IRGC naval exercises suggest partial closure is more likely than market consensus. Red Sea precedent shows disruptions last months, not weeks.',
+    url: 'https://polymarket.com/event/strait-of-hormuz-closure-2026',
   },
   {
     id: 'pm_fb_nuclear',
@@ -349,6 +351,7 @@ export const FALLBACK_PREDICTIONS: PolymarketPrediction[] = [
     conviction: 5,
     resolvesIn: '9 months',
     reasoning: 'Market roughly pricing this correctly. While Iran has enriched to 60%+, an actual test would guarantee military response — Iran prefers ambiguity. The political calculus of testing vs. threshold capability favors restraint.',
+    url: 'https://polymarket.com/event/iran-nuclear-weapon-test-2026',
   },
   {
     id: 'pm_fb_oil_100',
@@ -360,5 +363,6 @@ export const FALLBACK_PREDICTIONS: PolymarketPrediction[] = [
     conviction: 7,
     resolvesIn: '9 months',
     reasoning: 'Market underpricing duration risk of Hormuz disruption. Even partial closure removing 5-8M bbl/day exceeds OPEC spare capacity. Red Sea precedent: disruption lasted 8+ months vs. market expectation of weeks.',
+    url: 'https://polymarket.com/event/wti-crude-oil-100-2026',
   },
 ];

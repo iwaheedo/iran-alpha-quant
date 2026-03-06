@@ -92,6 +92,7 @@ export interface PolymarketPrediction {
   resolvesIn: string;
   reasoning?: string;
   conditionId?: string;
+  url?: string;
 }
 
 export interface MacroRegime {
