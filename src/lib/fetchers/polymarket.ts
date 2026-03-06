@@ -2,9 +2,8 @@ import type { PolymarketPrediction } from '@/types';
 
 const GAMMA_API_URL = 'https://gamma-api.polymarket.com';
 
-// Keywords to filter — must match Iran-related markets only
 const IRAN_KEYWORDS = [
-  'iran', 'iranian', 'tehran', 'khamenei', 'raisi',
+  'iran', 'iranian', 'tehran', 'khamenei',
   'irgc', 'strait of hormuz', 'hormuz', 'persian gulf',
   'iran nuclear', 'iran sanction', 'iran war', 'iran strike',
   'iran israel', 'iran attack',
@@ -29,6 +28,17 @@ interface GammaMarket {
   description: string;
 }
 
+interface GammaEvent {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  active: boolean;
+  closed: boolean;
+  volume24hr: number;
+  markets: GammaMarket[];
+}
+
 function getResolvesIn(endDate: string): string {
   const end = new Date(endDate);
   const now = new Date();
@@ -49,48 +59,47 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
   const predictions: PolymarketPrediction[] = [];
 
   try {
-    // Fetch active markets — Iran-focused queries only
-    const searchQueries = ['iran', 'iranian', 'hormuz', 'iran nuclear', 'iran israel', 'tehran'];
+    // Fetch top events by 24h volume — Iran markets appear here
+    const url = `${GAMMA_API_URL}/events?limit=100&active=true&closed=false&order=volume24hr&ascending=false`;
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(12000),
+      headers: { 'Accept': 'application/json' },
+    });
 
-    const allMarkets: GammaMarket[] = [];
+    if (!response.ok) {
+      console.warn(`[Polymarket] Events API returned HTTP ${response.status}`);
+      return [];
+    }
 
-    for (const query of searchQueries) {
-      try {
-        const url = `${GAMMA_API_URL}/markets?closed=false&active=true&limit=10&textQuery=${encodeURIComponent(query)}`;
-        const response = await fetch(url, {
-          signal: AbortSignal.timeout(8000),
-          headers: { 'Accept': 'application/json' },
+    const events = await response.json() as GammaEvent[];
+
+    // Filter for Iran-related events
+    const iranEvents = events.filter(event => {
+      const text = `${event.title} ${event.slug} ${event.description || ''}`.toLowerCase();
+      return IRAN_KEYWORDS.some(kw => text.includes(kw));
+    });
+
+    console.log(`[Polymarket] Found ${iranEvents.length} Iran events from ${events.length} total`);
+
+    // For each Iran event, pick the most relevant active market
+    for (const event of iranEvents) {
+      const activeMarkets = (event.markets || []).filter(m => m.active && !m.closed);
+      if (activeMarkets.length === 0) continue;
+
+      // Pick the market with the latest end date (most relevant timeframe)
+      const sortedMarkets = activeMarkets
+        .filter(m => {
+          if (!m.endDate) return true;
+          return new Date(m.endDate).getTime() > Date.now();
+        })
+        .sort((a, b) => {
+          const aEnd = a.endDate ? new Date(a.endDate).getTime() : Infinity;
+          const bEnd = b.endDate ? new Date(b.endDate).getTime() : Infinity;
+          return aEnd - bEnd; // Nearest expiry first (most actionable)
         });
 
-        if (!response.ok) {
-          console.warn(`[Polymarket] Search "${query}" returned HTTP ${response.status}`);
-          continue;
-        }
-
-        const markets = await response.json() as GammaMarket[];
-        allMarkets.push(...markets);
-      } catch (err) {
-        console.warn(`[Polymarket] Failed search "${query}":`, err instanceof Error ? err.message : err);
-      }
-
-      // Small delay between requests
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-
-    // Deduplicate by conditionId
-    const uniqueMarkets = new Map<string, GammaMarket>();
-    for (const m of allMarkets) {
-      if (!uniqueMarkets.has(m.conditionId)) {
-        uniqueMarkets.set(m.conditionId, m);
-      }
-    }
-
-    // Filter for relevance
-    for (const market of uniqueMarkets.values()) {
-      const fullText = `${market.question} ${market.description || ''}`.toLowerCase();
-      const isRelevant = IRAN_KEYWORDS.some(kw => fullText.includes(kw));
-
-      if (!isRelevant) continue;
+      const market = sortedMarkets[0];
+      if (!market) continue;
 
       // Parse outcome prices
       let prices: number[] = [];
@@ -104,9 +113,6 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
 
       const yesPrice = prices[0] || 0.5;
       const marketPricePercent = Math.round(yesPrice * 100);
-
-      // Determine direction based on market price
-      // If market thinks >60% likely → we evaluate if YES, else NO
       const direction: 'YES' | 'NO' = marketPricePercent >= 50 ? 'YES' : 'NO';
 
       predictions.push({
@@ -114,24 +120,18 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
         question: market.question,
         direction,
         marketPrice: marketPricePercent,
-        aiEstimate: 0, // Will be filled by AI in Phase 3
+        aiEstimate: 0,
         edge: 0,
         conviction: 0,
         resolvesIn: market.endDate ? getResolvesIn(market.endDate) : 'Unknown',
         conditionId: market.conditionId,
-        url: market.slug ? `https://polymarket.com/event/${market.slug}` : undefined,
+        url: `https://polymarket.com/event/${event.slug}`,
       });
     }
 
-    // Sort by volume/relevance (most relevant keywords first)
-    predictions.sort((a, b) => {
-      const aScore = IRAN_KEYWORDS.filter(kw => a.question.toLowerCase().includes(kw)).length;
-      const bScore = IRAN_KEYWORDS.filter(kw => b.question.toLowerCase().includes(kw)).length;
-      return bScore - aScore;
-    });
-
-    console.log(`[Polymarket] Found ${predictions.length} relevant markets from ${uniqueMarkets.size} unique markets`);
-    return predictions.slice(0, 15); // Cap at 15 predictions
+    // Sort by 24h volume (inherited from event order)
+    console.log(`[Polymarket] Returning ${Math.min(predictions.length, 15)} predictions`);
+    return predictions.slice(0, 15);
   } catch (err) {
     console.error('[Polymarket] Failed to fetch data:', err instanceof Error ? err.message : err);
     return [];
