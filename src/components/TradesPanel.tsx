@@ -47,29 +47,40 @@ export default function TradesPanel({
   const polyRef = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState<'trades' | 'polymarket'>('trades');
 
-  const scrollToPolymarket = useCallback(() => {
-    polyRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollPanelTo = useCallback((target: 'top' | 'polymarket') => {
+    const panel = polyRef.current?.closest('.right-panel') as HTMLElement | null;
+    if (!panel) return;
+    if (target === 'top') {
+      panel.scrollTop = 0;
+    } else if (polyRef.current) {
+      const panelRect = panel.getBoundingClientRect();
+      const polyRect = polyRef.current.getBoundingClientRect();
+      panel.scrollTop = polyRect.top - panelRect.top + panel.scrollTop;
+    }
   }, []);
+
+  const scrollToPolymarket = useCallback(() => {
+    scrollPanelTo('polymarket');
+  }, [scrollPanelTo]);
 
   const handleSectionChange = useCallback((section: 'trades' | 'polymarket') => {
     setActiveSection(section);
     if (section === 'trades') {
-      // Scroll the parent panel back to top
-      const panel = polyRef.current?.closest('.right-panel');
-      panel?.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollPanelTo('top');
     }
-  }, []);
+  }, [scrollPanelTo]);
 
-  // Auto-scroll to Polymarket when "Predict" tab is tapped on mobile
+  // Sync section with mobile bottom nav tabs
   useEffect(() => {
     if (activeTab === 'predict') {
       setActiveSection('polymarket');
-      const timer = setTimeout(() => {
-        polyRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      const timer = setTimeout(() => scrollPanelTo('polymarket'), 150);
       return () => clearTimeout(timer);
+    } else if (activeTab === 'trades') {
+      setActiveSection('trades');
+      scrollPanelTo('top');
     }
-  }, [activeTab]);
+  }, [activeTab, scrollPanelTo]);
 
   return (
     <>
