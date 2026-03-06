@@ -15,8 +15,10 @@ QUALITY RULES — every trade must meet this bar:
    BAD: "Oil goes up because of Middle East tensions."
    GOOD: "Hormuz closure removes 20M bbl/day (21% of seaborne oil). Market prices a 2-week disruption, but US-Iran escalation history suggests 6-8 weeks minimum. Tanker rates repriced within 72 hours during Suez 2021 — same mechanics apply here at 3x the magnitude."
 
-2. CAUSAL CHAIN (LOGIC): 3-5 steps. Each step MUST include specific data — numbers, percentages, historical comps, or timeframes. This is the logical chain showing WHY this asset rips or dumps.
+2. CAUSAL CHAIN (LOGIC): 3-5 steps. Each step MUST be a concise analytical statement with specific data — numbers, percentages, historical comps, or timeframes. This is the logical chain showing WHY this asset rips or dumps.
+   CRITICAL: Labels must be YOUR OWN ANALYSIS, not copy-pasted news headlines. Never include news item IDs (like gn_xxx or pm_xxx) in causal chain labels.
    BAD: { "label": "Shipping costs spike", "sentiment": "negative" }
+   BAD: { "label": "Industry doubts Trump plan to insure Gulf oil tankers (gn_SW5kdXN0cnkgZG91YnRz)", "sentiment": "negative" }
    GOOD: { "label": "War-risk insurance premiums jump 300-500bps (precedent: Red Sea 2024 saw +400bps within 48hrs)", "sentiment": "negative" }
    BAD: { "label": "Oil supply disrupted", "sentiment": "negative" }
    GOOD: { "label": "~20M bbl/day (21% of global seaborne crude) transits Hormuz — even partial closure removes 5-8M bbl/day from market", "sentiment": "negative" }
@@ -114,13 +116,20 @@ CRITICAL — NEWS-DRIVEN TRADE GENERATION:
 - newsIds field is MANDATORY — every trade must link to at least 1 news item ID that supports it.
 
 IMPORTANT:
-- Generate 4-8 trade ideas, diversified across categories and time horizons.
-- At least 2 trades MUST be 2ND_ORDER or 3RD_ORDER — this is where the alpha is.
+- Generate 6-10 trade ideas, diversified across categories and time horizons. MORE IDEAS = BETTER.
+- At least 3 trades MUST be 2ND_ORDER or 3RD_ORDER — this is where the real alpha lives.
 - At least 1 trade should be flagged as CROWDED if applicable.
-- Include a mix of time horizons.
+- Include a mix of time horizons (DAYS, WEEKS, MONTHS, YEAR_PLUS).
 - Use CURRENT prices from the price data provided.
 - Link trades to specific news items via newsIds — this is NOT optional.
-- Every field must meet the quality bar above. Vague or generic output is unacceptable.`;
+- Every field must meet the quality bar above. Vague or generic output is unacceptable.
+
+DEPTH REQUIREMENT — What separates amateur from professional analysis:
+- SURFACE LEVEL (BAD): "Long oil because Middle East tensions" or "Short EEM because geopolitical risk"
+- DEEP (GOOD): Identify the specific mechanism, quantify the magnitude, cite the historical precedent, and explain WHY the market is wrong.
+- Think about: supply chain disruptions, insurance repricing, credit default swap spreads, FX reserve drawdowns, food security implications, defense procurement timelines, sanctions evasion routes, tanker rerouting costs.
+- Every trade should make the reader think "I never would have connected those dots."
+- NEVER put news headlines or news IDs in causal chain labels — only your own analytical reasoning.`;
 
 // Full names for common symbols to prevent AI hallucinations
 const SYMBOL_NAMES: Record<string, string> = {

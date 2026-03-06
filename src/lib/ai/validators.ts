@@ -85,13 +85,20 @@ const VALID_TIME_HORIZONS = ['DAYS', 'WEEKS', 'MONTHS', 'YEAR_PLUS'];
 const VALID_SENTIMENTS = ['negative', 'neutral', 'positive'];
 const VALID_PLATFORMS = ['Robinhood', 'Trading212', 'Hyperliquid', 'Lighter', 'Ostrium'];
 
+function cleanCausalLabel(label: string): string {
+  // Strip news IDs like (gn_SW5kdXN0cnkgZG91YnRz) or (pm_xxx) that AI may copy-paste
+  return label
+    .replace(/\s*\((?:gn|pm|tw)_[A-Za-z0-9_-]+\)\s*/g, '')
+    .trim();
+}
+
 function validateCausalChain(chain: unknown): CausalStep[] {
   if (!Array.isArray(chain)) return [];
 
   return chain
     .filter((step): step is Record<string, unknown> => typeof step === 'object' && step !== null)
     .map(step => ({
-      label: typeof step.label === 'string' ? step.label : String(step.label || ''),
+      label: cleanCausalLabel(typeof step.label === 'string' ? step.label : String(step.label || '')),
       sentiment: VALID_SENTIMENTS.includes(step.sentiment as string)
         ? step.sentiment as CausalStep['sentiment']
         : 'neutral',
