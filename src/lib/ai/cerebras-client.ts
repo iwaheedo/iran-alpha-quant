@@ -15,7 +15,7 @@ export async function cerebrasGenerate(
       'Authorization': `Bearer ${CEREBRAS_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b',
+      model: 'llama3.1-8b',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
