@@ -3,7 +3,7 @@
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
 import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction } from '@/types';
-import { FALLBACK_TRADES, FALLBACK_REGIME } from '@/lib/fallback-data';
+import { FALLBACK_TRADES, FALLBACK_REGIME, FALLBACK_PREDICTIONS } from '@/lib/fallback-data';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -81,7 +81,8 @@ export function useAnalysisData() {
   const prices = pricesData?.prices || latestData?.prices || [];
   const liveTrades = latestData?.trades || [];
   const liveRegime = latestData?.regime || null;
-  const predictions = latestData?.predictions || [];
+  const livePredictions = latestData?.predictions || [];
+  const predictions = livePredictions.length > 0 ? livePredictions : FALLBACK_PREDICTIONS;
 
   // Use fallback data when AI returns empty trades
   const trades = liveTrades.length > 0 ? liveTrades : FALLBACK_TRADES;

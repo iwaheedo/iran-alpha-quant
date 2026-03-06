@@ -58,6 +58,9 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
             >
               <div className="col-span-5">
                 <p className="text-[12px] text-txt-primary leading-snug">{pred.question}</p>
+                {pred.reasoning && (
+                  <p className="text-[10px] text-txt-tertiary leading-snug mt-1">{pred.reasoning}</p>
+                )}
               </div>
               <div className="col-span-1 text-center">
                 <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded uppercase ${
@@ -98,7 +101,10 @@ export default function PolymarketSection({ predictions }: PolymarketSectionProp
 
           return (
             <div key={pred.id} className="bg-white rounded border border-border p-3">
-              <p className="text-[12px] text-txt-primary leading-snug mb-2">{pred.question}</p>
+              <p className="text-[12px] text-txt-primary leading-snug mb-1">{pred.question}</p>
+              {pred.reasoning && (
+                <p className="text-[10px] text-txt-tertiary leading-snug mb-2">{pred.reasoning}</p>
+              )}
               <div className="flex items-center justify-between">
                 <span className={`text-[9px] font-bold text-white px-1.5 py-0.5 rounded uppercase ${
                   isYes ? 'bg-up' : 'bg-down'

@@ -117,7 +117,7 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
 
   // Step 3: Enrich Polymarket predictions with AI estimates
   let enrichedPredictions = polymarketRaw;
-  if (polymarketRaw.length > 0 && trades.length > 0) {
+  if (polymarketRaw.length > 0 && news.length > 0) {
     console.log('[Analyzer] Step 3: Enriching Polymarket predictions...');
     try {
       const polyPrompt = buildPolymarketUserPrompt(polymarketRaw, news);

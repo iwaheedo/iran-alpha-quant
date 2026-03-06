@@ -79,6 +79,17 @@ describe('POLYMARKET_SYSTEM_PROMPT', () => {
   it('mentions probability estimation', () => {
     expect(POLYMARKET_SYSTEM_PROMPT).toContain('probability');
   });
+
+  it('requires causal logic and news references', () => {
+    expect(POLYMARKET_SYSTEM_PROMPT).toContain('CAUSAL LOGIC');
+    expect(POLYMARKET_SYSTEM_PROMPT).toContain('news');
+    expect(POLYMARKET_SYSTEM_PROMPT).toContain('historical');
+  });
+
+  it('includes BAD vs GOOD quality examples', () => {
+    expect(POLYMARKET_SYSTEM_PROMPT).toContain('BAD:');
+    expect(POLYMARKET_SYSTEM_PROMPT).toContain('GOOD:');
+  });
 });
 
 describe('buildTradeUserPrompt', () => {
