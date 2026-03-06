@@ -61,8 +61,8 @@ export default function NewsFeed({ news, onAnalyze, lastUpdated, countdown, isAn
       {/* News list */}
       <div className="overflow-y-auto flex-1">
         {news.length > 0 ? (
-          news.map((item) => (
-            <NewsItemRow key={item.id} item={item} onAnalyze={onAnalyze} />
+          news.map((item, idx) => (
+            <NewsItemRow key={`${item.id}-${idx}`} item={item} onAnalyze={onAnalyze} />
           ))
         ) : (
           <div className="p-8 text-center">

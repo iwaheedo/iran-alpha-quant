@@ -39,15 +39,8 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
         <span className="text-[10px] md:text-xs text-txt-secondary hidden md:inline truncate">
           {isAnalyzing
             ? 'Fetching intelligence...'
-            : regime?.subtitle
-              ? `${regime.subtitle} — ${regime.label}`
-              : 'Live Monitoring'}
+            : 'Converting Breaking News into Trade Alphas'}
         </span>
-        {regime && (
-          <span className="text-[9px] md:text-[10px] font-medium text-amber bg-amber/10 px-1.5 md:px-2 py-0.5 rounded whitespace-nowrap">
-            {regime.level}
-          </span>
-        )}
       </div>
 
       {/* Desktop extras */}

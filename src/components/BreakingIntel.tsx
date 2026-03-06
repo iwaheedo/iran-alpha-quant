@@ -26,11 +26,11 @@ export default function BreakingIntel({ news, onSeeAll }: BreakingIntelProps) {
         </button>
       </div>
       <div className="space-y-1.5">
-        {topItems.map((item) => {
+        {topItems.map((item, idx) => {
           const isBreaking = item.priority === 'BREAKING';
           return (
             <div
-              key={item.id}
+              key={`${item.id}-${idx}`}
               onClick={onSeeAll}
               className={`flex items-start gap-2 p-2 rounded border cursor-pointer ${
                 isBreaking
