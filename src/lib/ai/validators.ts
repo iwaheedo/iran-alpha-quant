@@ -132,7 +132,9 @@ export function validateTrade(data: unknown): TradeIdea | null {
   const direction = VALID_DIRECTIONS.includes(d.direction as string)
     ? d.direction as TradeIdea['direction']
     : null;
-  const thesis = typeof d.thesis === 'string' ? d.thesis : '';
+  const rawThesis = typeof d.thesis === 'string' ? d.thesis : '';
+  // Strip news IDs from thesis (AI sometimes copies them from news data)
+  const thesis = rawThesis.replace(/\s*\((?:gn|pm|tw)_[A-Za-z0-9_/-]+\)\s*/g, '').trim();
 
   if (!ticker || !direction || !thesis) {
     console.warn(`[Validator] Skipping trade — missing required fields (ticker=${ticker}, direction=${direction})`);
