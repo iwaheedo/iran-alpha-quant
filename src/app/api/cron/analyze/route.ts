@@ -1,33 +1,35 @@
 import { NextRequest } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { runFullAnalysis } from '@/lib/ai/analyzer';
 
-export const maxDuration = 10;
+export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
-// Cron endpoint: invalidates the analysis cache so the next request
-// to /api/latest triggers a fresh analysis run.
-// The GitHub Actions cron workflow calls this, then hits /api/latest
-// to warm the cache — so users always get instant responses.
+// Cron endpoint: runs the full analysis and returns the result.
+// The GitHub Actions cron workflow calls this every 10 min.
+// The result is cached at the CDN level on /api/latest via the
+// warm step that follows.
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.warn('[Cron /analyze] Unauthorized cron request');
     return new Response('Unauthorized', { status: 401 });
   }
 
   try {
-    console.log('[Cron /analyze] Invalidating analysis cache...');
-    revalidateTag('analysis');
+    console.log('[Cron /analyze] Running full analysis...');
+    const result = await runFullAnalysis();
 
     return Response.json({
       ok: true,
-      revalidated: true,
+      trades: result.trades.length,
+      predictions: result.predictions.length,
+      news: result.news.length,
+      hasAI: result.predictions.some(p => p.aiEstimate > 0),
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
     console.error('[Cron /analyze] Error:', err);
     return Response.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Revalidation failed' },
+      { ok: false, error: err instanceof Error ? err.message : 'Analysis failed' },
       { status: 500 }
     );
   }

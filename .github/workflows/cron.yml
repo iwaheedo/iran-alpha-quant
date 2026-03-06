@@ -23,13 +23,13 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             "${{ secrets.APP_URL }}/api/cron/prices" || echo "Prices fetch failed"
 
-      - name: Invalidate analysis cache
+      - name: Run full analysis (trade ideas + polymarket enrichment)
         run: |
-          curl -sf -X GET \
+          curl -sf --max-time 90 -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/cron/analyze" || echo "Cache invalidation failed"
+            "${{ secrets.APP_URL }}/api/cron/analyze" || echo "Analysis failed"
 
-      - name: Warm analysis cache (triggers fresh analysis)
+      - name: Warm CDN cache
         run: |
           curl -sf --max-time 90 \
-            "${{ secrets.APP_URL }}/api/latest" > /dev/null || echo "Cache warm failed"
+            "${{ secrets.APP_URL }}/api/latest" > /dev/null || echo "CDN warm failed"
