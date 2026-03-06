@@ -229,15 +229,27 @@ export function validatePolymarketEnrichment(
   enrichments: unknown,
   existing: PolymarketPrediction[]
 ): PolymarketPrediction[] {
-  if (!Array.isArray(enrichments)) return existing;
+  // AI with json_object mode may wrap array in an object like { predictions: [...] }
+  let items = enrichments;
+  if (!Array.isArray(items) && typeof items === 'object' && items !== null) {
+    const obj = items as Record<string, unknown>;
+    const arrVal = Object.values(obj).find(v => Array.isArray(v));
+    if (arrVal) {
+      items = arrVal;
+    } else {
+      return existing;
+    }
+  }
+  if (!Array.isArray(items)) return existing;
+  const enrichmentArray = items as unknown[];
 
   // Build lookup maps — by ID and by question text (normalized)
   const enrichById = new Map<string, Record<string, unknown>>();
   const enrichByQuestion = new Map<string, Record<string, unknown>>();
   const enrichByIndex = new Map<number, Record<string, unknown>>();
 
-  for (let i = 0; i < enrichments.length; i++) {
-    const e = enrichments[i];
+  for (let i = 0; i < enrichmentArray.length; i++) {
+    const e = enrichmentArray[i];
     if (typeof e !== 'object' || e === null) continue;
     const rec = e as Record<string, unknown>;
 
