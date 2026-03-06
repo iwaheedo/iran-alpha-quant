@@ -122,6 +122,22 @@ IMPORTANT:
 - Link trades to specific news items via newsIds — this is NOT optional.
 - Every field must meet the quality bar above. Vague or generic output is unacceptable.`;
 
+// Full names for common symbols to prevent AI hallucinations
+const SYMBOL_NAMES: Record<string, string> = {
+  WTI: 'WTI Crude Oil (West Texas Intermediate)',
+  BRENT: 'Brent Crude Oil',
+  GLD: 'SPDR Gold Shares ETF',
+  UUP: 'Invesco DB US Dollar Index ETF',
+  ZIM: 'ZIM Integrated Shipping Services',
+  ITA: 'iShares U.S. Aerospace & Defense ETF',
+  EEM: 'iShares MSCI Emerging Markets ETF',
+  TLT: 'iShares 20+ Year Treasury Bond ETF',
+  SPY: 'SPDR S&P 500 ETF',
+  BTC: 'Bitcoin',
+  WEAT: 'Teucrium Wheat Fund ETF',
+  DBA: 'Invesco DB Agriculture Fund',
+};
+
 export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): string {
   const newsJson = news.slice(0, 15).map(n => ({
     id: n.id,
@@ -135,6 +151,7 @@ export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): s
 
   const pricesJson = prices.map(p => ({
     symbol: p.symbol,
+    name: SYMBOL_NAMES[p.symbol] || p.symbol,
     price: p.price,
     changePercent: p.changePercent,
   }));
