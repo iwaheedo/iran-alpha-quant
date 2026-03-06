@@ -125,7 +125,7 @@ export async function fetchPolymarketData(): Promise<PolymarketPrediction[]> {
         conviction: 0,
         resolvesIn: market.endDate ? getResolvesIn(market.endDate) : 'Unknown',
         conditionId: market.conditionId,
-        url: `https://polymarket.com/event/${event.slug}`,
+        url: `https://polymarket.com/event/${event.slug}/${market.slug}`,
       });
     }
 
