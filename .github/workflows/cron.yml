@@ -9,27 +9,31 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
     steps:
-      - name: Refresh news feed
+      - name: Run analysis and populate CDN cache
         run: |
-          curl -sf -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/cron/news" || echo "News fetch failed"
+          echo "Triggering full analysis via /api/latest..."
 
-      - name: Refresh prices
-        run: |
-          curl -sf -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/cron/prices" || echo "Prices fetch failed"
+          # Cache-Control: no-cache bypasses CDN so request reaches origin.
+          # X-Cron-Secret triggers full analysis (fetch + AI + save).
+          # The response contains all data and gets cached by CDN for 10 min.
+          HTTP_CODE=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            --max-time 120 \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Cache-Control: no-cache" \
+            "${{ secrets.APP_URL }}/api/latest")
 
-      - name: Run full analysis (trade ideas + polymarket enrichment)
-        run: |
-          curl -sf --max-time 90 -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.APP_URL }}/api/cron/analyze" || echo "Analysis failed"
+          echo "HTTP status: $HTTP_CODE"
 
-      - name: Warm CDN cache
-        run: |
-          curl -sf --max-time 90 \
-            "${{ secrets.APP_URL }}/api/latest" > /dev/null || echo "CDN warm failed"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Request failed with status $HTTP_CODE"
+            cat /tmp/response.json 2>/dev/null || true
+            exit 1
+          fi
+
+          # Show summary
+          TRADES=$(python3 -c "import json; d=json.load(open('/tmp/response.json')); print(len(d.get('trades',[])))" 2>/dev/null || echo "?")
+          NEWS=$(python3 -c "import json; d=json.load(open('/tmp/response.json')); print(len(d.get('news',[])))" 2>/dev/null || echo "?")
+          PREDS=$(python3 -c "import json; d=json.load(open('/tmp/response.json')); print(len(d.get('predictions',[])))" 2>/dev/null || echo "?")
+          echo "Result: ${TRADES} trades, ${NEWS} news, ${PREDS} predictions"
