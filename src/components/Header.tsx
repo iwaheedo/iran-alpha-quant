@@ -31,7 +31,7 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
               />
             </svg>
           </div>
-          <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">
+          <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap" style={{ fontFamily: 'var(--font-rajdhani), system-ui, sans-serif' }}>
             War Alpha Quant
           </h1>
         </div>

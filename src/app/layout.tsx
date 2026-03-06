@@ -1,10 +1,16 @@
 import type { Metadata, Viewport } from 'next';
-import { Rajdhani, JetBrains_Mono } from 'next/font/google';
+import { Inter, Rajdhani, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 const rajdhani = Rajdhani({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['600', '700'],
   variable: '--font-rajdhani',
   display: 'swap',
 });
@@ -33,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${rajdhani.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${rajdhani.variable} ${jetbrainsMono.variable}`}>
       <body className="font-sans min-h-screen">{children}</body>
     </html>
   );
