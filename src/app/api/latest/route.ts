@@ -58,30 +58,31 @@ export async function GET(request: Request) {
 
     const hasData = (news?.length || 0) > 0 || (trades?.length || 0) > 0;
 
-    // Cache for 10 min when we have data (matches cron interval).
-    // stale-while-revalidate=120 gives 2 min buffer so users always see data.
-    // Short cache when empty so the next cron can populate quickly.
-    const cacheControl = hasData
-      ? 'public, s-maxage=600, stale-while-revalidate=120'
-      : 'public, s-maxage=10, stale-while-revalidate=10';
+    const payload = JSON.stringify({
+      trades: trades || [],
+      news: news || [],
+      prices: prices || [],
+      predictions: predictions || [],
+      regime: regime || DEFAULT_REGIME,
+      generatedAt: new Date().toISOString(),
+    });
 
-    return new Response(
-      JSON.stringify({
-        trades: trades || [],
-        news: news || [],
-        prices: prices || [],
-        predictions: predictions || [],
-        regime: regime || DEFAULT_REGIME,
-        generatedAt: new Date().toISOString(),
-      }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': cacheControl,
-        },
-      }
-    );
+    // Use Vercel-CDN-Cache-Control for explicit CDN control.
+    // When we have data: cache 15 min at CDN + serve stale for 1 hour.
+    // When empty (cold start): s-maxage=0 so CDN doesn't replace good cached data.
+    // Browser never caches (max-age=0) — always hits CDN.
+    const cdnCache = hasData
+      ? 's-maxage=900, stale-while-revalidate=3600'
+      : 's-maxage=0';
+
+    return new Response(payload, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        'Vercel-CDN-Cache-Control': cdnCache,
+      },
+    });
   } catch (err) {
     console.error('[API /latest] Error:', err);
 
@@ -99,7 +100,8 @@ export async function GET(request: Request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=10',
+          'Cache-Control': 'public, max-age=0, must-revalidate',
+          'Vercel-CDN-Cache-Control': 's-maxage=0',
         },
       }
     );
