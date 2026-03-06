@@ -22,6 +22,7 @@ export default function DashboardClient() {
     analysisError,
     lastUpdated,
     newsCountdown,
+    priceCountdown,
   } = useAnalysisData();
 
   const {
@@ -38,7 +39,7 @@ export default function DashboardClient() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TickerBar prices={prices} />
+      <TickerBar prices={prices} countdown={priceCountdown} />
       <Header regime={regime} isAnalyzing={isAnalyzing} />
 
       {/* Main layout */}

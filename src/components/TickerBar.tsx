@@ -1,10 +1,11 @@
 'use client';
 
 import type { TickerPrice } from '@/types';
-import { formatPrice, formatPercent } from '@/lib/utils';
+import { formatPrice } from '@/lib/utils';
 
 interface TickerBarProps {
   prices: TickerPrice[];
+  countdown?: number;
 }
 
 function PriceTick({ ticker }: { ticker: TickerPrice }) {
@@ -20,7 +21,7 @@ function PriceTick({ ticker }: { ticker: TickerPrice }) {
   );
 }
 
-export default function TickerBar({ prices }: TickerBarProps) {
+export default function TickerBar({ prices, countdown }: TickerBarProps) {
   // Duplicate prices for seamless scroll animation
   const displayPrices = prices.length > 0 ? [...prices, ...prices] : [];
 
@@ -40,6 +41,13 @@ export default function TickerBar({ prices }: TickerBarProps) {
           )}
         </div>
       </div>
+      {countdown !== undefined && prices.length > 0 && (
+        <div className="flex-shrink-0 px-2 md:px-3 h-full flex items-center border-l border-border">
+          <span className="font-mono text-[9px] text-txt-tertiary tabular-nums">
+            {countdown}s
+          </span>
+        </div>
+      )}
     </div>
   );
 }

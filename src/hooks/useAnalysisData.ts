@@ -32,6 +32,7 @@ interface LatestResponse {
 
 export function useAnalysisData() {
   const [newsCountdown, setNewsCountdown] = useState(60);
+  const [priceCountdown, setPriceCountdown] = useState(60);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   // Primary: reads latest data from DB (populated by server-side cron)
@@ -64,6 +65,7 @@ export function useAnalysisData() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNewsCountdown(prev => (prev <= 1 ? 60 : prev - 1));
+      setPriceCountdown(prev => (prev <= 1 ? 60 : prev - 1));
     }, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -75,6 +77,13 @@ export function useAnalysisData() {
       setNewsCountdown(60);
     }
   }, [newsData, latestData]);
+
+  // Reset price countdown when prices refresh
+  useEffect(() => {
+    if (pricesData) {
+      setPriceCountdown(60);
+    }
+  }, [pricesData]);
 
   // Merge data: prefer live news/prices over analysis snapshot
   const news = newsData?.news || latestData?.news || [];
@@ -101,5 +110,6 @@ export function useAnalysisData() {
     analysisError: hasError,
     lastUpdated,
     newsCountdown,
+    priceCountdown,
   };
 }
