@@ -104,6 +104,13 @@ export default function TradesPanel({
               Trade ideas will appear automatically when the next analysis cycle completes. News and prices continue updating live.
             </p>
           </div>
+        ) : (activeHorizon !== 'ALL' || activeCategory !== 'ALL') ? (
+          <div className="bg-white rounded border border-border p-8 text-center">
+            <p className="text-xs text-txt-secondary font-medium mb-1">No trades match this filter</p>
+            <p className="text-[10px] text-txt-tertiary">
+              Try selecting &quot;All&quot; to see all available trade ideas.
+            </p>
+          </div>
         ) : (
           <div className="bg-white rounded border border-border p-8 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
