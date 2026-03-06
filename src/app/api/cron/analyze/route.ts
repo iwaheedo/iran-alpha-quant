@@ -1,11 +1,14 @@
 import { NextRequest } from 'next/server';
-import { runFullAnalysis } from '@/lib/ai/analyzer';
+import { revalidateTag } from 'next/cache';
 
-export const maxDuration = 60;
+export const maxDuration = 10;
 export const dynamic = 'force-dynamic';
 
+// Cron endpoint: invalidates the analysis cache so the next request
+// to /api/latest triggers a fresh analysis run.
+// The GitHub Actions cron workflow calls this, then hits /api/latest
+// to warm the cache — so users always get instant responses.
 export async function GET(request: NextRequest) {
-  // Verify Vercel cron secret
   const authHeader = request.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     console.warn('[Cron /analyze] Unauthorized cron request');
@@ -13,24 +16,18 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    console.log('[Cron /analyze] Running scheduled analysis...');
-    const result = await runFullAnalysis();
-
-    console.log(`[Cron /analyze] Complete: ${result.trades.length} trades, ${result.news.length} news, ${result.prices.length} prices`);
+    console.log('[Cron /analyze] Invalidating analysis cache...');
+    revalidateTag('analysis');
 
     return Response.json({
       ok: true,
-      trades: result.trades.length,
-      news: result.news.length,
-      prices: result.prices.length,
-      predictions: result.predictions.length,
-      runId: result.runId,
+      revalidated: true,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
     console.error('[Cron /analyze] Error:', err);
     return Response.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Analysis failed' },
+      { ok: false, error: err instanceof Error ? err.message : 'Revalidation failed' },
       { status: 500 }
     );
   }
