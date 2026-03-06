@@ -11,17 +11,15 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
-// Client polling intervals — reads from DB (populated by server-side cron jobs)
-const NEWS_POLL = 60 * 1000;          // Poll DB for latest news every 60s
-const PRICES_POLL = 60 * 1000;        // Poll DB for latest prices every 60s
-const ANALYSIS_POLL = 10 * 60 * 1000; // Poll DB for latest trades every 10min
+// Client polling intervals
+const NEWS_POLL = 60 * 1000;          // Poll news every 60s
+const PRICES_POLL = 60 * 1000;        // Poll prices every 60s
+const ANALYSIS_POLL = 10 * 60 * 1000; // Poll trades every 10min
 
 // Architecture:
-//   Server-side cron jobs (vercel.json) populate the DB independently:
-//     /api/cron/analyze  → AI trade ideas every 10 min
-//     /api/cron/news     → news feed every 1 min
-//     /api/cron/prices   → price data every 1 min
-//   Client polls read-only endpoints to display latest data from DB.
+//   GitHub Actions cron runs every 10 min, hitting /api/cron/* endpoints
+//   which keep /api/latest, /api/fetch-news, /api/fetch-prices CDN-cached.
+//   Client polls CDN-cached endpoints — no extra serverless invocations.
 
 interface LatestResponse {
   trades: TradeIdea[];
@@ -48,16 +46,16 @@ export function useAnalysisData() {
     }
   );
 
-  // News from DB (cron populates every 1 min)
+  // Live news — CDN-cached 60s, polled every 60s
   const { data: newsData } = useSWR<{ news: NewsItem[] }>(
-    '/api/news',
+    '/api/fetch-news',
     fetcher,
     { refreshInterval: NEWS_POLL, revalidateOnFocus: false }
   );
 
-  // Prices from DB (cron populates every 1 min)
+  // Live prices — CDN-cached 60s, polled every 60s
   const { data: pricesData } = useSWR<{ prices: TickerPrice[] }>(
-    '/api/prices',
+    '/api/fetch-prices',
     fetcher,
     { refreshInterval: PRICES_POLL, revalidateOnFocus: false }
   );
