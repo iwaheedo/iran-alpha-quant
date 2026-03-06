@@ -21,7 +21,7 @@ const BREAKING_KEYWORDS = [
 ];
 
 function generateId(title: string, source: string): string {
-  const hash = Buffer.from(`${title}:${source}`).toString('base64url').slice(0, 16);
+  const hash = Buffer.from(`${title}:${source}`).toString('base64url').slice(0, 32);
   return `gn_${hash}`;
 }
 

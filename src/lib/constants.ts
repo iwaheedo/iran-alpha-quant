@@ -53,6 +53,8 @@ export const NEWS_SEARCH_QUERIES = [
   'Iran missile drone attack',
   'IRGC military operation',
   'Iran proxy Hezbollah Houthi attack',
+  'site:ft.com Iran oil geopolitical',
+  'site:ft.com Middle East conflict markets',
 ];
 
 // ===== Twitter/X Accounts to Monitor =====

@@ -57,7 +57,7 @@ export default function FilterBar({
 
       {/* Horizon row */}
       <div className="px-4 md:px-6 pb-2 flex items-center gap-1 overflow-x-auto">
-        <span className="text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-2 hidden md:inline">
+        <span className="text-[8px] md:text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-1 md:mr-2 flex-shrink-0">
           Return Horizon
         </span>
         {TIME_HORIZON_OPTIONS.map((opt) => (
@@ -78,7 +78,7 @@ export default function FilterBar({
 
       {/* Category chips */}
       <div className="px-4 md:px-6 pb-2.5 flex items-center gap-1.5 overflow-x-auto">
-        <span className="text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-1 hidden md:inline">
+        <span className="text-[8px] md:text-[9px] text-txt-tertiary font-bold uppercase tracking-widest mr-1 flex-shrink-0">
           Sector
         </span>
         {categories.map((cat) => {
