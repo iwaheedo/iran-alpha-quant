@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import type { TradeIdea, NewsItem, MacroRegime, PolymarketPrediction, Category, TimeHorizon } from '@/types';
 import type { SortOption } from '@/hooks/useFilters';
 import type { MobileTab } from '@/hooks/useMobileNav';
@@ -45,15 +45,25 @@ export default function TradesPanel({
   activeTab,
 }: TradesPanelProps) {
   const polyRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState<'trades' | 'polymarket'>('trades');
 
   const scrollToPolymarket = useCallback(() => {
     polyRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
+  const handleSectionChange = useCallback((section: 'trades' | 'polymarket') => {
+    setActiveSection(section);
+    if (section === 'trades') {
+      // Scroll the parent panel back to top
+      const panel = polyRef.current?.closest('.right-panel');
+      panel?.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
   // Auto-scroll to Polymarket when "Predict" tab is tapped on mobile
   useEffect(() => {
     if (activeTab === 'predict') {
-      // Small delay to ensure the panel is visible before scrolling
+      setActiveSection('polymarket');
       const timer = setTimeout(() => {
         polyRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -71,6 +81,8 @@ export default function TradesPanel({
         sortBy={sortBy}
         onSortChange={onSortChange}
         onScrollToPolymarket={scrollToPolymarket}
+        activeSection={activeSection}
+        onSectionChange={handleSectionChange}
       />
 
       {/* Breaking Intel (mobile only) */}

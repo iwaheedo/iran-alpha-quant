@@ -13,6 +13,8 @@ interface FilterBarProps {
   sortBy: SortOption;
   onSortChange: (s: SortOption) => void;
   onScrollToPolymarket?: () => void;
+  activeSection?: 'trades' | 'polymarket';
+  onSectionChange?: (section: 'trades' | 'polymarket') => void;
 }
 
 export default function FilterBar({
@@ -23,6 +25,8 @@ export default function FilterBar({
   sortBy,
   onSortChange,
   onScrollToPolymarket,
+  activeSection = 'trades',
+  onSectionChange,
 }: FilterBarProps) {
   const categories: (Category | 'ALL')[] = [
     'ALL', 'SHIPPING', 'CURRENCY', 'EMERGING_MARKETS', 'COMMODITIES',
@@ -33,12 +37,25 @@ export default function FilterBar({
     <div className="sticky top-0 bg-surface-1 z-10 border-b border-border">
       {/* Tab row */}
       <div className="px-4 md:px-6 py-2 flex items-center gap-4 md:gap-6">
-        <button className="text-[11px] md:text-xs font-bold text-txt-primary uppercase tracking-wide border-b-2 border-blue pb-2 pt-1">
+        <button
+          onClick={() => onSectionChange?.('trades')}
+          className={cn(
+            'text-[11px] md:text-xs uppercase tracking-wide pb-2 pt-1',
+            activeSection === 'trades'
+              ? 'font-bold text-txt-primary border-b-2 border-blue'
+              : 'font-medium text-txt-tertiary hover:text-txt-secondary'
+          )}
+        >
           Trade Ideas
         </button>
         <button
-          onClick={onScrollToPolymarket}
-          className="text-[11px] md:text-xs font-medium text-txt-tertiary uppercase tracking-wide pb-2 pt-1 hover:text-txt-secondary"
+          onClick={() => { onSectionChange?.('polymarket'); onScrollToPolymarket?.(); }}
+          className={cn(
+            'text-[11px] md:text-xs uppercase tracking-wide pb-2 pt-1',
+            activeSection === 'polymarket'
+              ? 'font-bold text-txt-primary border-b-2 border-blue'
+              : 'font-medium text-txt-tertiary hover:text-txt-secondary'
+          )}
         >
           Polymarket
         </button>
