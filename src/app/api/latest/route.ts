@@ -20,6 +20,12 @@ export async function GET() {
       Promise.resolve(getLatestRegime()),
     ]);
 
+    const hasData = news.length > 0 || trades.length > 0;
+    // Only cache long when we have real data — cold instances return empty DB
+    const cacheControl = hasData
+      ? 'public, s-maxage=600, stale-while-revalidate=60'
+      : 'public, s-maxage=5, stale-while-revalidate=5';
+
     return new Response(
       JSON.stringify({
         trades,
@@ -38,7 +44,7 @@ export async function GET() {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=60',
+          'Cache-Control': cacheControl,
         },
       }
     );
