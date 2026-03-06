@@ -67,20 +67,18 @@ export async function GET(request: Request) {
       generatedAt: new Date().toISOString(),
     });
 
-    // Use Vercel-CDN-Cache-Control for explicit CDN control.
-    // When we have data: cache 15 min at CDN + serve stale for 1 hour.
-    // When empty (cold start): s-maxage=0 so CDN doesn't replace good cached data.
-    // Browser never caches (max-age=0) — always hits CDN.
-    const cdnCache = hasData
-      ? 's-maxage=900, stale-while-revalidate=3600'
-      : 's-maxage=0';
+    // CDN caching strategy:
+    // Data responses: cache 15 min + serve stale for 1 hour (covers cron delays)
+    // Empty responses (cold start): don't cache so CDN keeps stale data from last cron
+    const cacheControl = hasData
+      ? 'public, s-maxage=900, stale-while-revalidate=3600'
+      : 'public, max-age=0, must-revalidate';
 
     return new Response(payload, {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=0, must-revalidate',
-        'Vercel-CDN-Cache-Control': cdnCache,
+        'Cache-Control': cacheControl,
       },
     });
   } catch (err) {
@@ -101,7 +99,6 @@ export async function GET(request: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Cache-Control': 'public, max-age=0, must-revalidate',
-          'Vercel-CDN-Cache-Control': 's-maxage=0',
         },
       }
     );
