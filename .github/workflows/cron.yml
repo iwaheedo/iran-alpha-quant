@@ -1,0 +1,39 @@
+name: Cron Jobs
+
+on:
+  schedule:
+    # AI trade analysis — every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # manual trigger
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fetch news
+        run: |
+          curl -sf -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/news" || echo "News fetch failed"
+
+  fetch-prices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fetch prices
+        run: |
+          curl -sf -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/prices" || echo "Prices fetch failed"
+
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: [fetch-news, fetch-prices]
+    steps:
+      - name: Run AI analysis
+        run: |
+          curl -sf -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/analyze" || echo "Analysis failed"
