@@ -32,7 +32,7 @@ export default function Header({ regime, isAnalyzing }: HeaderProps) {
             </svg>
           </div>
           <h1 className="text-sm md:text-base font-bold text-txt-primary tracking-tight uppercase whitespace-nowrap">
-            Iran Alpha Quant
+            War Alpha Quant
           </h1>
         </div>
         <div className="h-4 w-px bg-border hidden md:block" />
