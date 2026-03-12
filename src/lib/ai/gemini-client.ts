@@ -24,7 +24,7 @@ export async function geminiGenerate(
     generationConfig: {
       temperature: 0.7,
       responseMimeType: 'application/json',
-      maxOutputTokens: 8192,
+      maxOutputTokens: 2000,
     },
   });
 

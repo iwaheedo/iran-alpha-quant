@@ -2,8 +2,8 @@ name: Cron Jobs
 
 on:
   schedule:
-    # Run every 10 minutes to keep data fresh
-    - cron: '*/10 * * * *'
+    # Run every 12 hours to stay within 10K tokens/day budget
+    - cron: '0 */12 * * *'
   workflow_dispatch: # manual trigger
 
 jobs:
