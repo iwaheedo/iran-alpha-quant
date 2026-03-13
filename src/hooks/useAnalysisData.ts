@@ -2,7 +2,7 @@
 
 import useSWR from 'swr';
 import { useState, useEffect } from 'react';
-import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction } from '@/types';
+import type { TradeIdea, NewsItem, TickerPrice, MacroRegime, PolymarketPrediction, PortfolioPosition } from '@/types';
 import { FALLBACK_TRADES, FALLBACK_REGIME, FALLBACK_PREDICTIONS } from '@/lib/fallback-data';
 
 const fetcher = async (url: string) => {
@@ -26,6 +26,7 @@ interface LatestResponse {
   news: NewsItem[];
   prices: TickerPrice[];
   predictions: PolymarketPrediction[];
+  positions: PortfolioPosition[];
   regime: MacroRegime | null;
   generatedAt: string;
 }
@@ -97,6 +98,11 @@ export function useAnalysisData() {
   const trades = liveTrades.length > 0 ? liveTrades : FALLBACK_TRADES;
   const regime = liveRegime && liveRegime.label !== 'Escalation Watch' ? liveRegime : FALLBACK_REGIME;
 
+  // Portfolio positions
+  const allPositions = latestData?.positions || [];
+  const activePositions = allPositions.filter(p => p.status === 'ACTIVE');
+  const closedPositions = allPositions.filter(p => p.status === 'CLOSED');
+
   // Check if we got an error response (200 with error field) or SWR error
   const hasError = !!analysisError || !!(latestData && 'error' in latestData);
 
@@ -106,6 +112,8 @@ export function useAnalysisData() {
     prices,
     regime,
     predictions,
+    activePositions,
+    closedPositions,
     isAnalyzing: isAnalysisLoading && !latestData,
     analysisError: hasError,
     lastUpdated,

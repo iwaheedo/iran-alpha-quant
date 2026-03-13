@@ -24,8 +24,13 @@ import {
   savePredictions,
   getLatestNews,
   getLatestPrices,
+  getActivePositions,
+  openPosition,
+  closePosition,
+  markPositionReviewed,
+  updatePositionPrices,
 } from '@/lib/db';
-import type { TradeIdea, PolymarketPrediction, MacroRegime, AnalysisResponse, NewsItem, TickerPrice } from '@/types';
+import type { TradeIdea, PolymarketPrediction, MacroRegime, AnalysisResponse, NewsItem, TickerPrice, PortfolioAction, PortfolioPosition } from '@/types';
 
 function generateRunId(): string {
   return `run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -88,8 +93,18 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
 
   console.log(`[Analyzer] Data: ${news.length} news, ${prices.length} prices, ${polymarketRaw.length} predictions`);
 
+  // Step 1.5: Load active portfolio positions
+  let activePositions: PortfolioPosition[] = [];
+  try {
+    activePositions = getActivePositions();
+    console.log(`[Analyzer] Active positions: ${activePositions.length}`);
+  } catch (err) {
+    console.error('[Analyzer] Failed to load positions:', err instanceof Error ? err.message : err);
+  }
+
   // Step 2: Generate trade ideas via AI (may fail — that's OK)
   let trades: TradeIdea[] = [];
+  let portfolioActions: PortfolioAction[] = [];
   let regime: MacroRegime = {
     label: 'Escalation Watch',
     level: 'MEDIUM',
@@ -100,7 +115,7 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
   if (news.length > 0) {
     try {
       console.log('[Analyzer] Step 2: Generating trade ideas...');
-      const tradePrompt = buildTradeUserPrompt(news, prices);
+      const tradePrompt = buildTradeUserPrompt(news, prices, activePositions.length > 0 ? activePositions : undefined);
       const tradeResponse = await callAI(TRADE_SYSTEM_PROMPT, tradePrompt);
 
       console.log(`[Analyzer] Raw AI response length: ${tradeResponse.length} chars`);
@@ -110,6 +125,18 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
 
         regime = validateRegime(parsedObj.regime) || regime;
         trades = validateTrades(parsedObj.trades);
+
+        // Parse portfolio actions from AI response
+        if (Array.isArray(parsedObj.portfolioActions)) {
+          portfolioActions = (parsedObj.portfolioActions as Record<string, unknown>[])
+            .filter(a => a.positionId && a.action && a.reason)
+            .map(a => ({
+              positionId: String(a.positionId),
+              action: String(a.action) as PortfolioAction['action'],
+              reason: String(a.reason),
+            }));
+          console.log(`[Analyzer] Portfolio actions: ${portfolioActions.length}`);
+        }
 
         if (trades.length === 0) {
           console.warn('[Analyzer] No valid trades from AI response');
@@ -140,7 +167,7 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
     }
   }
 
-  // Step 4: Save results
+  // Step 4: Save results & manage portfolio
   console.log('[Analyzer] Step 4: Saving results...');
   try {
     if (trades.length > 0) {
@@ -149,6 +176,55 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
     if (enrichedPredictions.length > 0) {
       savePredictions(enrichedPredictions, runId);
     }
+
+    // Open new positions for new trades (skip tickers already in active portfolio)
+    const activeTickers = new Set(activePositions.map(p => p.ticker));
+    for (const trade of trades) {
+      if (!activeTickers.has(trade.ticker)) {
+        try {
+          openPosition({
+            id: `pos_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            tradeIdeaId: trade.id,
+            ticker: trade.ticker,
+            direction: trade.direction,
+            entryPrice: trade.currentPrice,
+            currentPrice: trade.currentPrice,
+            entryDate: new Date().toISOString(),
+            status: 'ACTIVE',
+            pnlPercent: 0,
+            pnlAbsolute: 0,
+            lastReviewedRunId: runId,
+            originalTradeData: JSON.stringify(trade),
+          });
+          console.log(`[Analyzer] Opened position: ${trade.ticker} ${trade.direction}`);
+        } catch (err) {
+          console.error(`[Analyzer] Failed to open position for ${trade.ticker}:`, err instanceof Error ? err.message : err);
+        }
+      }
+    }
+
+    // Apply AI portfolio actions (close/hold)
+    for (const action of portfolioActions) {
+      try {
+        if (action.action === 'CLOSE') {
+          const pos = activePositions.find(p => p.id === action.positionId);
+          if (pos) {
+            closePosition(pos.id, pos.currentPrice, action.reason, runId);
+            console.log(`[Analyzer] Closed position: ${pos.ticker} — ${action.reason}`);
+          }
+        } else {
+          markPositionReviewed(action.positionId, runId);
+        }
+      } catch (err) {
+        console.error(`[Analyzer] Failed to apply action for ${action.positionId}:`, err instanceof Error ? err.message : err);
+      }
+    }
+
+    // Update position prices with latest data
+    if (prices.length > 0) {
+      updatePositionPrices(prices);
+    }
+
     completeAnalysisRun(runId, news.length, trades.length, regime);
   } catch (err) {
     console.error('[Analyzer] DB save failed:', err instanceof Error ? err.message : err);
@@ -164,6 +240,7 @@ export async function runFullAnalysis(): Promise<AnalysisResponse> {
     news,
     prices,
     runId,
+    portfolioActions,
   };
 }
 

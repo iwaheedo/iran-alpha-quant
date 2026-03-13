@@ -1,4 +1,4 @@
-import type { NewsItem, TickerPrice, PolymarketPrediction } from '@/types';
+import type { NewsItem, TickerPrice, PolymarketPrediction, PortfolioPosition } from '@/types';
 
 export const TRADE_SYSTEM_PROMPT = `You are a top macro investor focused on Iran/Middle East geopolitical event-driven trades. Generate 3-4 high-conviction trade ideas driven by the news provided.
 
@@ -13,7 +13,9 @@ RULES:
 - Order types: 1ST_ORDER, 2ND_ORDER, 3RD_ORDER, CROWDED
 - Platforms: Robinhood/Trading212 (stocks/ETFs), Hyperliquid/Lighter (crypto), Ostrium (commodities/FX)
 
-Return JSON: { "regime": { "label": "Escalation Watch|Active Conflict|De-escalation|Sanctions Tightening|Diplomacy Mode", "level": "LOW|MEDIUM|HIGH|CRITICAL", "subtitle": "string", "summary": "string" }, "trades": [{ "id": "trade_001", "ticker": "string", "fullName": "string", "direction": "LONG|SHORT", "conviction": 1-10, "orderType": "string", "categories": ["string"], "timeHorizon": "string", "horizonLabel": "string", "currentPrice": number, "priceChange": number, "thesis": "string", "causalChain": [{"label":"string","sentiment":"negative|neutral|positive"}], "pricedIn": "string", "edge": "string", "riskReward": {"upside":number,"downside":number,"ratio":"string"}, "entry": "string", "invalidation": "string", "breakers": ["string"], "platforms": [{"name":"string","instrument":"string"}], "isCrowded": boolean, "createdAt": "ISO string", "newsIds": ["string"] }] }`;
+If ACTIVE_POSITIONS are provided, also return "portfolioActions": [{ "positionId": "string", "action": "HOLD|CLOSE|ADJUST", "reason": "1 sentence" }] for each position. CLOSE if thesis is broken or invalidation hit. HOLD with brief confirmation otherwise. Generate 2 new trades when reviewing 3+ positions.
+
+Return JSON: { "regime": { "label": "Escalation Watch|Active Conflict|De-escalation|Sanctions Tightening|Diplomacy Mode", "level": "LOW|MEDIUM|HIGH|CRITICAL", "subtitle": "string", "summary": "string" }, "trades": [{ "id": "trade_001", "ticker": "string", "fullName": "string", "direction": "LONG|SHORT", "conviction": 1-10, "orderType": "string", "categories": ["string"], "timeHorizon": "string", "horizonLabel": "string", "currentPrice": number, "priceChange": number, "thesis": "string", "causalChain": [{"label":"string","sentiment":"negative|neutral|positive"}], "pricedIn": "string", "edge": "string", "riskReward": {"upside":number,"downside":number,"ratio":"string"}, "entry": "string", "invalidation": "string", "breakers": ["string"], "platforms": [{"name":"string","instrument":"string"}], "isCrowded": boolean, "createdAt": "ISO string", "newsIds": ["string"] }], "portfolioActions": [] }`;
 
 // Full names for common symbols to prevent AI hallucinations
 const SYMBOL_NAMES: Record<string, string> = {
@@ -31,7 +33,7 @@ const SYMBOL_NAMES: Record<string, string> = {
   DBA: 'Invesco DB Agriculture Fund',
 };
 
-export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): string {
+export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[], activePositions?: PortfolioPosition[]): string {
   const newsJson = news.slice(0, 5).map(n => ({
     id: n.id,
     title: n.title,
@@ -42,10 +44,23 @@ export function buildTradeUserPrompt(news: NewsItem[], prices: TickerPrice[]): s
 
   const pricesJson = prices.map(p => `${p.symbol}: $${p.price} (${p.changePercent > 0 ? '+' : ''}${p.changePercent}%)`);
 
-  return `Date: ${new Date().toISOString().split('T')[0]}
+  let prompt = `Date: ${new Date().toISOString().split('T')[0]}
 NEWS: ${JSON.stringify(newsJson)}
-PRICES: ${pricesJson.join(', ')}
-Generate 3-4 trade ideas. Use these exact prices. Link each trade to news IDs. Return valid JSON only.`;
+PRICES: ${pricesJson.join(', ')}`;
+
+  if (activePositions && activePositions.length > 0) {
+    const posSummaries = activePositions.map(p => {
+      const sign = p.pnlPercent >= 0 ? '+' : '';
+      return `${p.id}|${p.ticker}|${p.direction}|entry:$${p.entryPrice}|now:$${p.currentPrice}|PnL:${sign}${p.pnlPercent.toFixed(1)}%`;
+    });
+    prompt += `\nACTIVE_POSITIONS: ${posSummaries.join('; ')}`;
+    const newCount = activePositions.length >= 3 ? 2 : 3;
+    prompt += `\nGenerate ${newCount} NEW trades (different tickers from active). Also return portfolioActions for each position. Return valid JSON only.`;
+  } else {
+    prompt += `\nGenerate 3-4 trade ideas. Use these exact prices. Link each trade to news IDs. Return valid JSON only.`;
+  }
+
+  return prompt;
 }
 
 export const POLYMARKET_SYSTEM_PROMPT = `You are a geopolitical probability analyst. For each prediction market, estimate the TRUE probability (0-100) based on current news. Reference specific news, historical precedents, and whether the market is over/under pricing.

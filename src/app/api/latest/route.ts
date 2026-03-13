@@ -4,6 +4,7 @@ import {
   getLatestNews,
   getLatestPrices,
   getLatestRegime,
+  getAllPositions,
 } from '@/lib/db';
 import { runFullAnalysis } from '@/lib/ai/analyzer';
 
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   const isCron = cronSecret === process.env.CRON_SECRET;
 
   try {
-    let trades, news, prices, predictions, regime;
+    let trades, news, prices, predictions, regime, positions;
 
     if (isCron) {
       // Cron: run full analysis (fetch fresh data from APIs, AI analysis, save to DB)
@@ -44,15 +45,17 @@ export async function GET(request: Request) {
       prices = result.prices;
       predictions = result.predictions;
       regime = result.regime;
+      positions = getAllPositions();
       console.log(`[API /latest] Analysis complete: ${trades.length} trades, ${news.length} news, ${predictions.length} predictions`);
     } else {
       // User: read pre-computed results from DB (populated by cron on same instance)
-      [trades, predictions, news, prices, regime] = await Promise.all([
+      [trades, predictions, news, prices, regime, positions] = await Promise.all([
         Promise.resolve(getLatestTrades()),
         Promise.resolve(getLatestPredictions()),
         Promise.resolve(getLatestNews(100)),
         Promise.resolve(getLatestPrices()),
         Promise.resolve(getLatestRegime()),
+        Promise.resolve(getAllPositions()),
       ]);
     }
 
@@ -63,6 +66,7 @@ export async function GET(request: Request) {
       news: news || [],
       prices: prices || [],
       predictions: predictions || [],
+      positions: positions || [],
       regime: regime || DEFAULT_REGIME,
       generatedAt: new Date().toISOString(),
     });

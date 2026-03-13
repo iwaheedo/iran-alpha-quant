@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import type { TradeIdea, NewsItem, MacroRegime, PolymarketPrediction, Category, TimeHorizon } from '@/types';
+import type { TradeIdea, NewsItem, MacroRegime, PolymarketPrediction, Category, TimeHorizon, PortfolioPosition } from '@/types';
 import type { SortOption } from '@/hooks/useFilters';
 import type { MobileTab } from '@/hooks/useMobileNav';
 import FilterBar from './FilterBar';
@@ -16,6 +16,7 @@ interface TradesPanelProps {
   news: NewsItem[];
   regime: MacroRegime | null;
   predictions: PolymarketPrediction[];
+  activePositions: PortfolioPosition[];
   activeHorizon: TimeHorizon | 'ALL';
   onHorizonChange: (h: TimeHorizon | 'ALL') => void;
   activeCategory: Category | 'ALL';
@@ -33,6 +34,7 @@ export default function TradesPanel({
   news,
   regime,
   predictions,
+  activePositions = [],
   activeHorizon,
   onHorizonChange,
   activeCategory,
@@ -115,9 +117,10 @@ export default function TradesPanel({
             </p>
           </div>
         ) : trades.length > 0 ? (
-          trades.map((trade) => (
-            <TradeCard key={trade.id} trade={trade} />
-          ))
+          trades.map((trade) => {
+            const pos = activePositions.find(p => p.ticker === trade.ticker);
+            return <TradeCard key={trade.id} trade={trade} position={pos} />;
+          })
         ) : hasError ? (
           <div className="bg-white rounded border border-amber/30 p-8 text-center">
             <p className="text-xs text-amber font-medium mb-2">

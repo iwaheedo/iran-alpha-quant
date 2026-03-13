@@ -1,4 +1,5 @@
 import { fetchAllPrices } from '@/lib/fetchers';
+import { updatePositionPrices, savePrices } from '@/lib/db';
 
 export const maxDuration = 30;
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,16 @@ export async function GET() {
   try {
     console.log('[API /fetch-prices] Fetching prices (CDN cache miss)...');
     const prices = await fetchAllPrices();
+
+    // Update portfolio position prices with latest data
+    try {
+      if (prices.length > 0) {
+        savePrices(prices);
+        updatePositionPrices(prices);
+      }
+    } catch (err) {
+      console.error('[API /fetch-prices] Position price update failed:', err instanceof Error ? err.message : err);
+    }
 
     return new Response(
       JSON.stringify({

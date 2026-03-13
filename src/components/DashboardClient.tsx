@@ -18,6 +18,7 @@ export default function DashboardClient() {
     prices,
     regime,
     predictions,
+    activePositions,
     isAnalyzing,
     analysisError,
     lastUpdated,
@@ -77,6 +78,7 @@ export default function DashboardClient() {
               news={news}
               regime={regime}
               predictions={predictions}
+              activePositions={activePositions}
               activeHorizon={activeHorizon}
               onHorizonChange={setActiveHorizon}
               activeCategory={activeCategory}

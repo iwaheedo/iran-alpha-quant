@@ -1,6 +1,6 @@
 'use client';
 
-import type { TradeIdea, Category } from '@/types';
+import type { TradeIdea, Category, PortfolioPosition } from '@/types';
 import { CATEGORY_CONFIG } from '@/lib/constants';
 import { formatPrice, cn } from '@/lib/utils';
 import CausalChain from './CausalChain';
@@ -9,6 +9,7 @@ import PlatformBadges from './PlatformBadges';
 
 interface TradeCardProps {
   trade: TradeIdea;
+  position?: PortfolioPosition;
 }
 
 function orderTypeStyle(orderType: TradeIdea['orderType']) {
@@ -33,12 +34,51 @@ function orderTypeLabel(orderType: TradeIdea['orderType']) {
   }
 }
 
-export default function TradeCard({ trade }: TradeCardProps) {
+export default function TradeCard({ trade, position }: TradeCardProps) {
   const isLong = trade.direction === 'LONG';
   const priceUp = trade.priceChange >= 0;
 
   return (
-    <div className="bg-white rounded border border-border overflow-hidden">
+    <div className={cn(
+      'bg-white rounded border overflow-hidden',
+      position?.status === 'ACTIVE' ? 'border-blue/30' : position?.status === 'CLOSED' ? 'border-txt-tertiary/30' : 'border-border'
+    )}>
+      {/* Position P&L Banner */}
+      {position && (
+        <div className={cn(
+          'px-4 md:px-5 py-1.5 flex items-center justify-between text-[10px]',
+          position.status === 'ACTIVE'
+            ? 'bg-blue/5 border-b border-blue/20'
+            : 'bg-surface-2/50 border-b border-border'
+        )}>
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              'font-bold uppercase tracking-wider px-1.5 py-0.5 rounded text-[8px]',
+              position.status === 'ACTIVE' ? 'bg-blue/10 text-blue' : 'bg-surface-2 text-txt-tertiary'
+            )}>
+              {position.status}
+            </span>
+            <span className="text-txt-tertiary">
+              Entry: <span className="font-mono font-medium text-txt-secondary">${formatPrice(position.entryPrice)}</span>
+            </span>
+            <span className="text-txt-tertiary">
+              Now: <span className="font-mono font-medium text-txt-secondary">${formatPrice(position.currentPrice)}</span>
+            </span>
+          </div>
+          <span className={cn(
+            'font-mono font-bold text-[11px]',
+            position.pnlPercent >= 0 ? 'text-up' : 'text-down'
+          )}>
+            {position.pnlPercent >= 0 ? '+' : ''}{position.pnlPercent.toFixed(1)}%
+          </span>
+        </div>
+      )}
+      {position?.status === 'CLOSED' && position.closeReason && (
+        <div className="px-4 md:px-5 py-1 bg-surface-2/30 border-b border-border text-[10px] text-txt-tertiary">
+          Closed: {position.closeReason}
+        </div>
+      )}
+
       {/* Header */}
       <div className="px-4 md:px-5 py-2.5 md:py-3 border-b border-border bg-surface-1/50">
         <div className="flex items-center justify-between mb-1.5">

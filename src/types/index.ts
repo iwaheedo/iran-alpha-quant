@@ -118,6 +118,34 @@ export interface AnalysisRun {
   error?: string;
 }
 
+// ===== Portfolio =====
+
+export type PositionStatus = 'ACTIVE' | 'CLOSED';
+
+export interface PortfolioPosition {
+  id: string;
+  tradeIdeaId: string;
+  ticker: string;
+  direction: TradeDirection;
+  entryPrice: number;
+  currentPrice: number;
+  entryDate: string;
+  status: PositionStatus;
+  pnlPercent: number;
+  pnlAbsolute: number;
+  exitPrice?: number;
+  exitDate?: string;
+  closeReason?: string;
+  lastReviewedRunId?: string;
+  originalTradeData: string;
+}
+
+export interface PortfolioAction {
+  positionId: string;
+  action: 'HOLD' | 'CLOSE' | 'ADJUST';
+  reason: string;
+}
+
 // ===== Analysis Response =====
 
 export interface AnalysisResponse {
@@ -127,4 +155,5 @@ export interface AnalysisResponse {
   news: NewsItem[];
   prices: TickerPrice[];
   runId: string;
+  portfolioActions?: PortfolioAction[];
 }
